@@ -22,3 +22,4 @@ export const userRegister = async({
     return user
 
 }
+
