@@ -1,7 +1,7 @@
 import { Request,Response } from "express";
 import { asyncHandler } from "../../utils/AsyncHandler.js";
 import { ApiResponse } from "../../utils/ApiResponse.js";
-import { loginUser, logoutUser, refreshAccessToken, userRegister } from "./auth.services.js";
+import { getMe, loginUser, logoutUser, refreshAccessToken, userRegister } from "./auth.services.js";
 import { env } from "../../config/config.js";
 import { CookieOptions } from "express";
 import { accessTokenCookieOptions, refreshTokenCookieOptions, } from "../../config/cookie.config.js";
@@ -90,5 +90,21 @@ export const logout = asyncHandler(
           null
         )
       );
+  }
+);
+
+
+//getMeController
+export const getMeController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const user = await getMe(req.user.id);
+
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        "User fetched successfully.",
+        user
+      )
+    );
   }
 );

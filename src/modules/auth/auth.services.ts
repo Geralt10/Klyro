@@ -141,3 +141,16 @@ export const logoutUser = async(refreshToken:string)=>{
 
   return;
 }
+
+//getME
+
+export const getMe = async(userId:string)=>{
+const user = await userModel.findById(userId);
+
+  if (!user) {
+  throw new ApiError(404, "User not found.");
+  }
+
+  return user;
+
+}
