@@ -4,6 +4,8 @@ import { RegisterUserInput,LoginUserInput } from "./auth.validation.js";
 import { hashRefreshToken } from "../../utils/token.js";
 import { verifyRefreshToken } from "../../utils/jwt.utils.js";
 
+
+//registerUser
 export const userRegister = async({
     name,
     email,
@@ -25,6 +27,8 @@ export const userRegister = async({
 
 }
 
+
+//loginUser
 export const loginUser = async ({
   email,
   password,
@@ -65,7 +69,7 @@ export const loginUser = async ({
     
 };
 
-
+//refresh-token-cycle
 export const refreshAccessToken = async (
   refreshToken: string
 ) => {
@@ -106,3 +110,34 @@ export const refreshAccessToken = async (
     refreshToken: newRefreshToken,
   };
 };
+
+
+//logoutUser
+export const logoutUser = async(refreshToken:string)=>{
+
+  if(!refreshToken){
+    throw new ApiError(401,"Refresh token is required")
+  }
+
+  const payload = verifyRefreshToken(refreshToken);
+
+  const user = await userModel.findById(payload.id).select("+refreshToken");
+
+  if(!user){
+    throw new ApiError(401,"invalid refresh token")
+  }
+  
+  const hashedRefreshToken = hashRefreshToken(refreshToken);
+
+  if(hashedRefreshToken !== user.refreshToken){
+    throw new ApiError(401,"invalid refresh token")
+  }
+
+  user.refreshToken="";
+
+  user.save({
+    validateBeforeSave:false
+  })
+
+  return;
+}

@@ -1,7 +1,7 @@
 import { Request,Response } from "express";
 import { asyncHandler } from "../../utils/AsyncHandler.js";
 import { ApiResponse } from "../../utils/ApiResponse.js";
-import { loginUser, refreshAccessToken, userRegister } from "./auth.services.js";
+import { loginUser, logoutUser, refreshAccessToken, userRegister } from "./auth.services.js";
 import { env } from "../../config/config.js";
 import { CookieOptions } from "express";
 import { accessTokenCookieOptions, refreshTokenCookieOptions, } from "../../config/cookie.config.js";
@@ -38,6 +38,8 @@ export const loginController = asyncHandler(
     }
 )
 
+
+//refresh-token-controller
 export const refresh = asyncHandler(
   async (req: Request, res: Response) => {
     const refreshToken = req.cookies.refreshToken;
@@ -59,6 +61,34 @@ export const refresh = asyncHandler(
       .status(200)
       .json(
         new ApiResponse(200,"Token refreshed successfully.",null)
+      );
+  }
+);
+
+
+//logout
+export const logout = asyncHandler(
+  async (req: Request, res: Response) => {
+    const refreshToken = req.cookies.refreshToken;
+
+    await logoutUser(refreshToken);
+
+    return res
+      .clearCookie(
+        "accessToken",
+        accessTokenCookieOptions
+      )
+      .clearCookie(
+        "refreshToken",
+        refreshTokenCookieOptions
+      )
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          "Logout successful.",
+          null
+        )
       );
   }
 );
