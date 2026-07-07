@@ -1,9 +1,10 @@
 import { Request,Response } from "express";
 import { asyncHandler } from "../../utils/AsyncHandler.js";
 import { ApiResponse } from "../../utils/ApiResponse.js";
-import { loginUser, userRegister } from "./auth.services.js";
+import { loginUser, refreshAccessToken, userRegister } from "./auth.services.js";
 import { env } from "../../config/config.js";
 import { CookieOptions } from "express";
+import { accessTokenCookieOptions, refreshTokenCookieOptions, } from "../../config/cookie.config.js";
 
 export const registerController = asyncHandler(
     async(req:Request,res:Response)=>{
@@ -23,20 +24,6 @@ export const loginController = asyncHandler(
     async(req:Request, res:Response)=>{
         const {user,accessToken,refreshToken} = await loginUser(req.body);
 
-        const accessTokenCookieOptions:CookieOptions = {
-          httpOnly: true,
-          secure: env.NODE_ENV === "production",
-          sameSite: "strict",
-          maxAge: 15 * 60 * 1000,
-        };
-
-        const refreshTokenCookieOptions:CookieOptions = {
-          httpOnly: true,
-          secure: env.NODE_ENV === "production",
-          sameSite: "strict",
-          maxAge: 7 * 24 * 60 * 60 * 1000,
-        };
-
         res.cookie("accessToken", accessToken, accessTokenCookieOptions);
 
         res.cookie("refreshToken", refreshToken, refreshTokenCookieOptions);
@@ -50,3 +37,28 @@ export const loginController = asyncHandler(
         );
     }
 )
+
+export const refresh = asyncHandler(
+  async (req: Request, res: Response) => {
+    const refreshToken = req.cookies.refreshToken;
+
+    const { accessToken, refreshToken: newRefreshToken } =
+      await refreshAccessToken(refreshToken);
+
+    return res
+      .cookie(
+        "accessToken",
+        accessToken,
+        accessTokenCookieOptions
+      )
+      .cookie(
+        "refreshToken",
+        newRefreshToken,
+        refreshTokenCookieOptions
+      )
+      .status(200)
+      .json(
+        new ApiResponse(200,"Token refreshed successfully.",null)
+      );
+  }
+);

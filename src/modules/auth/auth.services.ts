@@ -2,6 +2,7 @@ import { userModel } from "./user.model.js";
 import { ApiError } from "../../utils/ApiError.js";
 import { RegisterUserInput,LoginUserInput } from "./auth.validation.js";
 import { hashRefreshToken } from "../../utils/token.js";
+import { verifyRefreshToken } from "../../utils/jwt.utils.js";
 
 export const userRegister = async({
     name,
@@ -29,11 +30,14 @@ export const loginUser = async ({
   password,
 }: LoginUserInput) => {
     const user = await userModel.findOne({ email }).select("+password +refreshToken");
+    
     if(!user){
         throw new ApiError(401,"Invalid email or Password");
     }
+    
     const isPasswordCorrect = await user.comparePassword(password);
 
+    
     if (!isPasswordCorrect) {
       throw new ApiError(401,"Invalid email or password");
     }
@@ -46,6 +50,8 @@ export const loginUser = async ({
     const refreshToken = user.generateRefreshToken();
 
     const hashedRefreshToken = hashRefreshToken(refreshToken);
+    
+    user.refreshToken = hashedRefreshToken;
 
     await user.save({
         validateBeforeSave:false,
@@ -57,4 +63,46 @@ export const loginUser = async ({
         refreshToken
     }
     
+};
+
+
+export const refreshAccessToken = async (
+  refreshToken: string
+) => {
+  if (!refreshToken) {
+    throw new ApiError(401, "Refresh token is required.");
+  }
+
+  // 1. Verify JWT
+  const payload = verifyRefreshToken(refreshToken);
+
+  // 2. Find user
+  const user = await userModel.findById(payload.id).select("+refreshToken");
+
+  if (!user) {
+    throw new ApiError(401, "Invalid refresh token.");
+  }
+
+  // 3. Compare hashed refresh token
+  const hashedRefreshToken = hashRefreshToken(refreshToken);
+
+  if (hashedRefreshToken !== user.refreshToken) {
+    throw new ApiError(401, "Invalid refresh token.");
+  }
+
+  // 4. Generate new tokens
+  const newAccessToken = user.generateAccessToken();
+  const newRefreshToken = user.generateRefreshToken();
+
+  // 5. Hash & save new refresh token
+  user.refreshToken = hashRefreshToken(newRefreshToken);
+
+  await user.save({
+    validateBeforeSave: false,
+  });
+
+  return {
+    accessToken: newAccessToken,
+    refreshToken: newRefreshToken,
+  };
 };
