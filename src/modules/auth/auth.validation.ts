@@ -26,4 +26,7 @@ export const registerSchema = z.object({
       /[!@#$%^&*(),.?":{}|<>]/,
       "Password must contain at least one special character"
     ),
-});
+}).strict();
+
+export type RegisterUserInput =
+  z.infer<typeof registerSchema>;

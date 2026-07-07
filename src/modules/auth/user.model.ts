@@ -1,4 +1,4 @@
-import { Schema, model, models } from "mongoose";
+import { Schema, model } from "mongoose";
 
 import { UserRole } from "../../constants/user.js";
 
@@ -77,4 +77,4 @@ userSchema.methods.comparePassword = async function (
   return bcrypt.compare(candidatePassword, this.password);
 };
 
-export const User = models.User || model<IUser>("User", userSchema);
+export const userModel =model<IUser>("User", userSchema);
