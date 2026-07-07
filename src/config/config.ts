@@ -5,4 +5,12 @@ dotenv.config();
 export const env = {
   PORT: Number(process.env.PORT) || 3000,
   MONGO_URI:process.env.MONGO_URI!,
+
+  ACCESS_TOKEN_SECRET: process.env.ACCESS_TOKEN_SECRET!,
+  REFRESH_TOKEN_SECRET: process.env.REFRESH_TOKEN_SECRET!,
+
+  ACCESS_TOKEN_EXPIRY: process.env.ACCESS_TOKEN_EXPIRY!,
+  REFRESH_TOKEN_EXPIRY: process.env.REFRESH_TOKEN_EXPIRY!,
+  NODE_ENV:process.env.NODE_ENV,
+
 };

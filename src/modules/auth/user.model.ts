@@ -1,8 +1,8 @@
 import { Schema, model } from "mongoose";
-
 import { UserRole } from "../../constants/user.js";
-
 import bcrypt from "bcrypt";
+import jwt, { SignOptions } from "jsonwebtoken"
+import { env } from "../../config/config.js";
 
 export interface IUser {
   name: string;
@@ -13,6 +13,8 @@ export interface IUser {
   isVerified: boolean;
   refreshToken: string;
   comparePassword(candidatePassword: string): Promise<boolean>;
+  generateAccessToken(): string;
+  generateRefreshToken(): string;
 }
 
 const userSchema = new Schema<IUser>(
@@ -76,5 +78,32 @@ userSchema.methods.comparePassword = async function (
 ): Promise<boolean> {
   return bcrypt.compare(candidatePassword, this.password);
 };
+
+userSchema.methods.generateAccessToken=  function(): string{
+  return jwt.sign(
+    {
+      id: this._id,
+      role: this.role,
+    },
+    env.ACCESS_TOKEN_SECRET,
+    {
+      expiresIn: env.ACCESS_TOKEN_EXPIRY as SignOptions["expiresIn"],
+    }
+  );
+}
+
+userSchema.methods.generateRefreshToken=  function(): string{
+  return jwt.sign(
+    {
+      id: this._id,
+    },
+    env.REFRESH_TOKEN_SECRET,
+    {
+      expiresIn: env.REFRESH_TOKEN_EXPIRY as SignOptions["expiresIn"],
+    }
+  );
+}
+
+
 
 export const userModel =model<IUser>("User", userSchema);
