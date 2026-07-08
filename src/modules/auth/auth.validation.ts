@@ -33,6 +33,10 @@ export const loginSchema = z.object({
   password:z.string().min(8,"Password must be at least 8 characters")
 })
 
+export const resendVerificationSchema = z.object({
+  email: z.email("Please provide a valid email address."),
+});
+
 export type RegisterUserInput =
   z.infer<typeof registerSchema>;
 

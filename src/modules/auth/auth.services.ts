@@ -1,7 +1,7 @@
 import { userModel } from "./user.model.js";
 import { ApiError } from "../../utils/ApiError.js";
 import { RegisterUserInput,LoginUserInput } from "./auth.validation.js";
-import { generateVerificationToken, hashToken } from "../../utils/token.utils.js";
+import { generateEmailVerificationToken, generateVerificationToken, hashToken } from "../../utils/token.utils.js";
 import { verifyRefreshToken } from "../../utils/jwt.utils.js";
 import { sendVerificationEmail } from "../../services/email.service.js";
 
@@ -14,18 +14,18 @@ export const userRegister = async({
 }:RegisterUserInput)=>{
     const existingUser = await userModel.findOne({ email });
 
-    const verificationToken = generateVerificationToken();
-    const hashedVerificationToken = hashToken(verificationToken);
-    const verificationTokenExpiry = new Date(
-      Date.now() + 60 * 60 * 1000
-    );
+    const {
+      verificationToken,
+      verificationTokenHashed,
+      verificationTokenExpiry,
+    } = generateEmailVerificationToken();
 
     if (existingUser) {
       if (existingUser.isVerified) {
         throw new ApiError(409, "Email already registered.");
       }
     
-      existingUser.verificationToken = hashedVerificationToken;
+      existingUser.verificationToken = verificationTokenHashed;
       existingUser.verificationTokenExpiry = verificationTokenExpiry;
 
       await existingUser.save({
@@ -44,7 +44,7 @@ export const userRegister = async({
       name,
       email,
       password,
-      verificationToken: hashedVerificationToken,
+      verificationToken: verificationTokenHashed,
       verificationTokenExpiry: verificationTokenExpiry,
     });
 
@@ -213,4 +213,36 @@ export const verifyEmailService = async (token: string) => {
   });
 
   return user;
+};
+
+export const resendVerificationService = async (
+  email: string
+) => {
+  const user = await userModel.findOne({ email });
+
+  if (!user) {
+    throw new ApiError(404, "User not found.");
+  }
+
+  if (user.isVerified) {
+    throw new ApiError(400, "Email is already verified.");
+  }
+
+  const {
+    verificationToken,
+    verificationTokenHashed,
+    verificationTokenExpiry,
+  } = generateEmailVerificationToken();
+
+  user.verificationToken = verificationTokenHashed;
+  user.verificationTokenExpiry = verificationTokenExpiry;
+
+  await user.save({
+    validateBeforeSave: false,
+  });
+
+  await sendVerificationEmail(
+    user.email,
+    verificationToken
+  );
 };

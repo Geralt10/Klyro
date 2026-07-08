@@ -1,7 +1,7 @@
 import { Request,Response } from "express";
 import { asyncHandler } from "../../utils/AsyncHandler.js";
 import { ApiResponse } from "../../utils/ApiResponse.js";
-import { getMe, loginUser, logoutUser, refreshAccessToken, userRegister, verifyEmailService } from "./auth.services.js";
+import { getMe, loginUser, logoutUser, refreshAccessToken, resendVerificationService, userRegister, verifyEmailService } from "./auth.services.js";
 import { accessTokenCookieOptions, refreshTokenCookieOptions, } from "../../config/cookie.config.js";
 import { ApiError } from "../../utils/ApiError.js";
 
@@ -127,3 +127,19 @@ export const verifyEmailController = asyncHandler(async(req:Request,res:Response
     )
   );
 }) 
+
+
+//
+export const resendVerificationController =asyncHandler(async(req:Request,res:Response,)=>{
+const { email } = req.body;
+
+await resendVerificationService(email);
+
+return res.status(200).json(
+  new ApiResponse(
+    200,
+    "Verification email sent successfully.",
+    null
+  )
+);
+})
