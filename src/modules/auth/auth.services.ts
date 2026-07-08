@@ -183,3 +183,34 @@ const user = await userModel.findById(userId);
   return user;
 
 }
+
+
+//verify-email
+export const verifyEmailService = async (token: string) => {
+  const hashedToken = hashToken(token);
+
+  const user = await userModel.findOne({
+    verificationToken: hashedToken,
+  }).select("+verificationToken +verificationTokenExpiry");
+
+  if (!user) {
+    throw new ApiError(400, "Invalid verification token.");
+  }
+
+  if (
+    !user.verificationTokenExpiry ||
+    user.verificationTokenExpiry < new Date()
+  ) {
+    throw new ApiError(400, "Verification token has expired.");
+  }
+
+  user.isVerified = true;
+  user.verificationToken = undefined;
+  user.verificationTokenExpiry = undefined;
+
+  await user.save({
+    validateBeforeSave: false,
+  });
+
+  return user;
+};

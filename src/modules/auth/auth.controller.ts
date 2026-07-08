@@ -1,10 +1,10 @@
 import { Request,Response } from "express";
 import { asyncHandler } from "../../utils/AsyncHandler.js";
 import { ApiResponse } from "../../utils/ApiResponse.js";
-import { getMe, loginUser, logoutUser, refreshAccessToken, userRegister } from "./auth.services.js";
-import { env } from "../../config/config.js";
-import { CookieOptions } from "express";
+import { getMe, loginUser, logoutUser, refreshAccessToken, userRegister, verifyEmailService } from "./auth.services.js";
 import { accessTokenCookieOptions, refreshTokenCookieOptions, } from "../../config/cookie.config.js";
+import { ApiError } from "../../utils/ApiError.js";
+
 
 export const registerController = asyncHandler(
     async(req:Request,res:Response)=>{
@@ -37,7 +37,6 @@ export const loginController = asyncHandler(
         );
     }
 )
-
 
 //refresh-token-controller
 export const refresh = asyncHandler(
@@ -108,3 +107,23 @@ export const getMeController = asyncHandler(
     );
   }
 );
+
+
+//verifyEmail
+export const verifyEmailController = asyncHandler(async(req:Request,res:Response,)=>{
+  const { token } = req.query;
+
+  if (!token || typeof token !== "string") {
+    throw new ApiError(400, "Verification token is required.");
+  }
+
+  await verifyEmailService(token);
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      "Email verified successfully.",
+       null,
+    )
+  );
+}) 
