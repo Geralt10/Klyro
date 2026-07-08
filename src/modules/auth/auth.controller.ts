@@ -13,7 +13,7 @@ export const registerController = asyncHandler(
         return res.status(201).json(
             new ApiResponse(
                 201,
-                "user registered successfully",
+                "Registration successful. Please verify your email.",
                 result
             )
         )

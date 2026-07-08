@@ -1,8 +1,9 @@
 import { userModel } from "./user.model.js";
 import { ApiError } from "../../utils/ApiError.js";
 import { RegisterUserInput,LoginUserInput } from "./auth.validation.js";
-import { hashRefreshToken } from "../../utils/token.utils.js";
+import { generateVerificationToken, hashToken } from "../../utils/token.utils.js";
 import { verifyRefreshToken } from "../../utils/jwt.utils.js";
+import { sendVerificationEmail } from "../../services/email.service.js";
 
 
 //registerUser
@@ -11,21 +12,49 @@ export const userRegister = async({
     email,
     password,
 }:RegisterUserInput)=>{
-    const userExist = await userModel.findOne({email});
+    const existingUser = await userModel.findOne({ email });
 
-    if(userExist){
-        throw new ApiError(409,"email already exists");
-    }
+    const verificationToken = generateVerificationToken();
+    const hashedVerificationToken = hashToken(verificationToken);
+    const verificationTokenExpiry = new Date(
+      Date.now() + 60 * 60 * 1000
+    );
+
+    if (existingUser) {
+      if (existingUser.isVerified) {
+        throw new ApiError(409, "Email already registered.");
+      }
     
-    const user = await userModel.create({
-        name,
-        email,
-        password
-    })
+      existingUser.verificationToken = hashedVerificationToken;
+      existingUser.verificationTokenExpiry = verificationTokenExpiry;
 
-    return user
+      await existingUser.save({
+        validateBeforeSave: false,
+      });
 
-}
+      await sendVerificationEmail(
+        existingUser.email,
+        verificationToken
+      );
+
+      return existingUser;
+    }
+
+    const user = await userModel.create({    
+      name,
+      email,
+      password,
+      verificationToken: hashedVerificationToken,
+      verificationTokenExpiry: verificationTokenExpiry,
+    });
+
+    await sendVerificationEmail(
+      user.email,
+      verificationToken
+    );
+
+    return user;
+  }
 
 
 //loginUser
@@ -53,7 +82,7 @@ export const loginUser = async ({
     const accessToken = user.generateAccessToken();
     const refreshToken = user.generateRefreshToken();
 
-    const hashedRefreshToken = hashRefreshToken(refreshToken);
+    const hashedRefreshToken = hashToken(refreshToken);
     
     user.refreshToken = hashedRefreshToken;
 
@@ -88,7 +117,7 @@ export const refreshAccessToken = async (
   }
 
   // 3. Compare hashed refresh token
-  const hashedRefreshToken = hashRefreshToken(refreshToken);
+  const hashedRefreshToken = hashToken(refreshToken);
 
   if (hashedRefreshToken !== user.refreshToken) {
     throw new ApiError(401, "Invalid refresh token.");
@@ -99,7 +128,7 @@ export const refreshAccessToken = async (
   const newRefreshToken = user.generateRefreshToken();
 
   // 5. Hash & save new refresh token
-  user.refreshToken = hashRefreshToken(newRefreshToken);
+  user.refreshToken = hashToken(newRefreshToken);
 
   await user.save({
     validateBeforeSave: false,
@@ -127,7 +156,7 @@ export const logoutUser = async(refreshToken:string)=>{
     throw new ApiError(401,"invalid refresh token")
   }
   
-  const hashedRefreshToken = hashRefreshToken(refreshToken);
+  const hashedRefreshToken = hashToken(refreshToken);
 
   if(hashedRefreshToken !== user.refreshToken){
     throw new ApiError(401,"invalid refresh token")
