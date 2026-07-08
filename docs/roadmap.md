@@ -155,35 +155,30 @@ Completed ✅
 
 ### Logout
 
-Pending
-
-Tasks
 
 * Remove Refresh Token
 * Clear Cookies
 
+Status:
+Completed ✅
 ---
 
 ### Current User (/me)
 
-Pending
-
-Tasks
-
 * Authentication Middleware
 * Return Current User
 
+Status:
+Completed ✅
 ---
 
 ### Authentication Middleware
 
-Pending
-
-Tasks
-
 * Verify Access Token
 * Attach req.user
 
+Status:
+Completed ✅
 ---
 
 ### Authorization Middleware

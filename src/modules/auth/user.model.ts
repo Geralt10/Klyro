@@ -15,6 +15,8 @@ export interface IUser {
   comparePassword(candidatePassword: string): Promise<boolean>;
   generateAccessToken(): string;
   generateRefreshToken(): string;
+  verificationToken?: string;
+  verificationTokenExpiry?: Date;
 }
 
 const userSchema = new Schema<IUser>(
@@ -58,6 +60,15 @@ const userSchema = new Schema<IUser>(
     refreshToken: {
       type: String,
       default: "",
+      select: false,
+    },
+    verificationToken: {
+      type: String,
+      select: false,
+    },
+    
+    verificationTokenExpiry: {
+      type: Date,
       select: false,
     },
   },

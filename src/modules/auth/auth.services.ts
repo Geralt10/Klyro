@@ -1,7 +1,7 @@
 import { userModel } from "./user.model.js";
 import { ApiError } from "../../utils/ApiError.js";
 import { RegisterUserInput,LoginUserInput } from "./auth.validation.js";
-import { hashRefreshToken } from "../../utils/token.js";
+import { hashRefreshToken } from "../../utils/token.utils.js";
 import { verifyRefreshToken } from "../../utils/jwt.utils.js";
 
 
