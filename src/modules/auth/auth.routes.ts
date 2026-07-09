@@ -1,7 +1,7 @@
 import {Router}from "express";
 import { validate } from "../../middlewares/validate.js";
-import { loginSchema, registerSchema, resendVerificationSchema } from "./auth.validation.js";
-import { getMeController, loginController, logout, refresh, registerController, resendVerificationController, verifyEmailController } from "./auth.controller.js";
+import { changePasswordSchema, forgotPasswordSchema, loginSchema, registerSchema, resendVerificationSchema, resetPasswordSchema } from "./auth.validation.js";
+import { changePasswordController, forgotPasswordController, getMeController, loginController, logout, refresh, registerController, resendVerificationController, resetPasswordController, verifyEmailController } from "./auth.controller.js";
 import { authenticate } from "../../middlewares/auth.middleware.js";
 
 
@@ -21,5 +21,9 @@ authRouter.get("/me",authenticate,getMeController);
 authRouter.get("/verify-email",verifyEmailController);
 
 authRouter.post("/resend-verification",validate(resendVerificationSchema),resendVerificationController);
+
+authRouter.post("/reset-password",validate(resetPasswordSchema),resetPasswordController);
+
+authRouter.patch("/change-password",authenticate,validate(changePasswordSchema),changePasswordController);
 
 export default authRouter;

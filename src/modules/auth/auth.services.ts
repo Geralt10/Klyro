@@ -3,8 +3,8 @@ import { ApiError } from "../../utils/ApiError.js";
 import { RegisterUserInput,LoginUserInput } from "./auth.validation.js";
 import { generateEmailVerificationToken, generateVerificationToken, hashToken } from "../../utils/token.utils.js";
 import { verifyRefreshToken } from "../../utils/jwt.utils.js";
-import { sendVerificationEmail } from "../../services/email.service.js";
-
+import { sendResetPasswordEmail, sendVerificationEmail } from "../../services/email.service.js";
+import bcrypt from "bcrypt";
 
 //registerUser
 export const userRegister = async({
@@ -24,13 +24,12 @@ export const userRegister = async({
       if (existingUser.isVerified) {
         throw new ApiError(409, "Email already registered.");
       }
-    
+      existingUser.name = name;
+      existingUser.password = password;
       existingUser.verificationToken = verificationTokenHashed;
       existingUser.verificationTokenExpiry = verificationTokenExpiry;
 
-      await existingUser.save({
-        validateBeforeSave: false,
-      });
+      await existingUser.save();
 
       await sendVerificationEmail(
         existingUser.email,
@@ -215,6 +214,7 @@ export const verifyEmailService = async (token: string) => {
   return user;
 };
 
+//resend email verificaiton
 export const resendVerificationService = async (
   email: string
 ) => {
@@ -245,4 +245,124 @@ export const resendVerificationService = async (
     user.email,
     verificationToken
   );
+};
+
+
+//resetPassword
+export const resetPasswordService = async (
+  token: string,
+  newPassword: string
+) => {
+  const hashedPasswordResetToken = hashToken(token);
+
+  const user = await userModel.findOne({
+    passwordResetToken: hashedPasswordResetToken,
+  }).select(
+    "+passwordResetToken +passwordResetTokenExpiry +refreshToken"
+  );
+
+  if (!user) {
+    throw new ApiError(400, "Invalid or expired password reset token.");
+  }
+
+  if (!user.isVerified) {
+    throw new ApiError(
+      403,
+      "Email must be verified before resetting the password."
+    );
+  }
+
+  if (
+    !user.passwordResetTokenExpiry ||
+    user.passwordResetTokenExpiry < new Date()
+  ) {
+    throw new ApiError(400, "Password reset token has expired.");
+  }
+
+  user.password = newPassword;
+
+  user.passwordResetToken = undefined;
+  user.passwordResetTokenExpiry = undefined;
+
+  // Invalidate existing session
+  user.refreshToken = "";
+
+  await user.save();
+};
+
+
+//forgotPassword
+export const forgotPasswordService = async (
+  email: string
+) => {
+  const user = await userModel.findOne({ email });
+
+  // Prevent email enumeration
+  if (!user || !user.isVerified) {
+    return;
+  }
+
+  const passwordResetToken = generateVerificationToken();
+
+  const hashedPasswordResetToken =
+    hashToken(passwordResetToken);
+
+  user.passwordResetToken =
+    hashedPasswordResetToken;
+
+  user.passwordResetTokenExpiry = new Date(
+    Date.now() + 15 * 60 * 1000
+  );
+
+  await user.save({
+    validateBeforeSave: false,
+  });
+
+  await sendResetPasswordEmail(
+    user.email,
+    passwordResetToken
+  );
+};
+
+
+//changePassword
+export const changePasswordService = async (
+  userId: string,
+  currentPassword: string,
+  newPassword: string
+) => {
+  const user = await userModel.findById(userId).select(
+    "+password +refreshToken"
+  );
+
+  if (!user) {
+    throw new ApiError(404, "User not found.");
+  }
+
+  if(!user.isVerified){
+    throw new ApiError(403,"Email must be verified before changing the password");
+  }
+
+  const isPasswordValid = await bcrypt.compare(
+    currentPassword,
+    user.password
+  );
+
+  if (!isPasswordValid) {
+    throw new ApiError(400, "Current password is incorrect.");
+  }
+
+  if (currentPassword === newPassword) {
+    throw new ApiError(
+      400,
+      "New password must be different from the current password."
+    );
+  }
+
+  user.password = newPassword;
+
+  // Invalidate existing session
+  user.refreshToken = "";
+
+  await user.save();
 };

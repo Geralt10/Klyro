@@ -1,11 +1,13 @@
 import { Request,Response } from "express";
 import { asyncHandler } from "../../utils/AsyncHandler.js";
 import { ApiResponse } from "../../utils/ApiResponse.js";
-import { getMe, loginUser, logoutUser, refreshAccessToken, resendVerificationService, userRegister, verifyEmailService } from "./auth.services.js";
+import { changePasswordService, forgotPasswordService, getMe, loginUser, logoutUser, refreshAccessToken, resendVerificationService, resetPasswordService, userRegister, verifyEmailService } from "./auth.services.js";
 import { accessTokenCookieOptions, refreshTokenCookieOptions, } from "../../config/cookie.config.js";
 import { ApiError } from "../../utils/ApiError.js";
 
 
+
+//register
 export const registerController = asyncHandler(
     async(req:Request,res:Response)=>{
         const result = await userRegister(req.body);
@@ -20,6 +22,8 @@ export const registerController = asyncHandler(
     }
 )
 
+
+//login
 export const loginController = asyncHandler(
     async(req:Request, res:Response)=>{
         const {user,accessToken,refreshToken} = await loginUser(req.body);
@@ -129,7 +133,7 @@ export const verifyEmailController = asyncHandler(async(req:Request,res:Response
 }) 
 
 
-//
+//resend-verification-email
 export const resendVerificationController =asyncHandler(async(req:Request,res:Response,)=>{
 const { email } = req.body;
 
@@ -143,3 +147,60 @@ return res.status(200).json(
   )
 );
 })
+
+
+
+//resetPassword
+export const resetPasswordController = asyncHandler(async(req:Request,res:Response)=>{
+  const { token, password } = req.body;
+
+  await resetPasswordService(token, password);
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      "Password reset successfully.",
+      null,
+    )
+  );
+})
+
+
+//forgot-password
+
+export const forgotPasswordController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { email } = req.body;
+
+    await forgotPasswordService(email);
+
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        "If an account exists, a password reset link has been sent.",
+        null,
+      )
+    );
+  }
+);
+
+//change-password
+export const changePasswordController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { currentPassword, newPassword } = req.body;
+
+    await changePasswordService(
+      req.user.id,
+      currentPassword,
+      newPassword
+    );
+
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        "Password changed successfully.",
+        null,
+      )
+    );
+  }
+);

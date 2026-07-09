@@ -4,6 +4,7 @@ import bcrypt from "bcrypt";
 import jwt, { SignOptions } from "jsonwebtoken"
 import { env } from "../../config/config.js";
 
+
 export interface IUser {
   name: string;
   email: string;
@@ -17,6 +18,8 @@ export interface IUser {
   generateRefreshToken(): string;
   verificationToken?: string;
   verificationTokenExpiry?: Date;
+  passwordResetTokenExpiry?:Date;
+  passwordResetToken?:string;
 }
 
 const userSchema = new Schema<IUser>(
@@ -71,6 +74,14 @@ const userSchema = new Schema<IUser>(
       type: Date,
       select: false,
     },
+    passwordResetToken:{
+      type:String,
+      select:false
+    },
+    passwordResetTokenExpiry:{
+      type:Date,
+      select:false
+    }
   },
   {
     timestamps: true,

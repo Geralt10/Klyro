@@ -1,6 +1,8 @@
 import nodemailer from "nodemailer";
 import { google } from "googleapis";
 import { env } from "../config/config.js";
+import { verificationTemplate } from "../templates/emails/verification.template.js";
+import { resetPasswordTemplate } from "../templates/emails/reset-password.template.js";
 
 const oauth2Client = new google.auth.OAuth2(
   env.SMTP_CLIENT_ID,
@@ -47,37 +49,38 @@ export const sendVerificationEmail = async (
   email: string,
   verificationToken: string
 ) => {
-  const verificationUrl =
-    `${env.FRONTEND_URL}/verify-email?token=${verificationToken}`;
+  const verificationUrl =`${env.FRONTEND_URL}/verify-email?token=${verificationToken}`;
 
-  const html = `
-    <h2>Welcome to Klyro 👋</h2>
-
-    <p>Please verify your email by clicking the button below.</p>
-
-    <a
-      href="${verificationUrl}"
-      style="
-        display:inline-block;
-        padding:12px 20px;
-        background:#2563eb;
-        color:#ffffff;
-        text-decoration:none;
-        border-radius:6px;
-      "
-    >
-      Verify Email
-    </a>
-
-    <p>This verification link will expire in 1 hour.</p>
-
-    <p>If you didn't create this account, you can safely ignore this email.</p>
-  `;
+  const html = verificationTemplate({verificationUrl});
 
   await sendEmail(
     email,
-    "Verify your email address",
+    "Verify your Klyro account",
     html
   );
 };
+
+export const sendResetPasswordEmail = async (
+  email: string,
+  resetPasswordToken: string
+) => {
+  const resetPasswordUrl = `${env.FRONTEND_URL}/reset-password?token=${resetPasswordToken}`;
+
+  const html = resetPasswordTemplate({
+    resetPasswordUrl,
+  });
+
+  await sendEmail(
+    email,
+    "Reset your Klyro password",
+    html
+  );
+};
+
+
+
+
+
+
+
 
