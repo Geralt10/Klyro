@@ -8,7 +8,8 @@ import { env } from "../../config/config.js";
 export interface IUser {
   name: string;
   email: string;
-  password: string;
+  googleId?: string;
+  password?: string;
   avatar: string;
   role: UserRole;
   isVerified: boolean;
@@ -20,6 +21,7 @@ export interface IUser {
   verificationTokenExpiry?: Date;
   passwordResetTokenExpiry?:Date;
   passwordResetToken?:string;
+
 }
 
 const userSchema = new Schema<IUser>(
@@ -37,16 +39,24 @@ const userSchema = new Schema<IUser>(
       lowercase: true,
       trim: true,
     },
+    googleId: {
+      type: String,
+      unique: true,
+      sparse: true,
+      trim: true
+    },
 
     password: {
       type: String,
-      required: true,
+      required:function (this:IUser) {
+        return !this.googleId;
+      },
       select: false,
     },
 
     avatar: {
       type: String,
-      default: "",
+      default: "https://www.gravatar.com/avatar/?d=mp&s=512",
     },
 
     role: {
@@ -54,7 +64,6 @@ const userSchema = new Schema<IUser>(
       enum: Object.values(UserRole),
       default: UserRole.USER,
     },
-
     isVerified: {
       type: Boolean,
       default: false,
@@ -92,12 +101,16 @@ userSchema.pre("save", async function () {
   if (!this.isModified("password")) {
     return;
   }
-  this.password = await bcrypt.hash(this.password, 10);
+  this.password = await bcrypt.hash(this.password!, 10);
 });
 
 userSchema.methods.comparePassword = async function (
   candidatePassword: string
 ): Promise<boolean> {
+  if (!this.password) {
+    return false;
+  }
+
   return bcrypt.compare(candidatePassword, this.password);
 };
 

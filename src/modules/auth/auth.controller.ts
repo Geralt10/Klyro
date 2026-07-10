@@ -4,21 +4,25 @@ import { ApiResponse } from "../../utils/ApiResponse.js";
 import { changePasswordService, forgotPasswordService, getMe, loginUser, logoutUser, refreshAccessToken, resendVerificationService, resetPasswordService, userRegister, verifyEmailService } from "./auth.services.js";
 import { accessTokenCookieOptions, refreshTokenCookieOptions, } from "../../config/cookie.config.js";
 import { ApiError } from "../../utils/ApiError.js";
-
+import { googleLogin } from "./auth.services.js";
 
 
 //register
 export const registerController = asyncHandler(
     async(req:Request,res:Response)=>{
-        const result = await userRegister(req.body);
+        const { user, requiresEmailVerification } =await userRegister(req.body);
+
+        const message = requiresEmailVerification
+          ? "Registration successful. Please verify your email."
+          : "Registration successful.";
 
         return res.status(201).json(
-            new ApiResponse(
-                201,
-                "Registration successful. Please verify your email.",
-                result
-            )
-        )
+          new ApiResponse(
+            201,
+            message,
+            user
+          )
+        );
     }
 )
 
@@ -167,7 +171,6 @@ export const resetPasswordController = asyncHandler(async(req:Request,res:Respon
 
 
 //forgot-password
-
 export const forgotPasswordController = asyncHandler(
   async (req: Request, res: Response) => {
     const { email } = req.body;
@@ -183,6 +186,7 @@ export const forgotPasswordController = asyncHandler(
     );
   }
 );
+
 
 //change-password
 export const changePasswordController = asyncHandler(
@@ -200,6 +204,36 @@ export const changePasswordController = asyncHandler(
         200,
         "Password changed successfully.",
         null,
+      )
+    );
+  }
+);
+
+export const googleLoginController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const {
+      user,
+      accessToken,
+      refreshToken,
+    } = await googleLogin(req.body);
+
+    res.cookie(
+      "accessToken",
+      accessToken,
+      accessTokenCookieOptions
+    );
+
+    res.cookie(
+      "refreshToken",
+      refreshToken,
+      refreshTokenCookieOptions
+    );
+
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        "Google login successful.",
+        user
       )
     );
   }

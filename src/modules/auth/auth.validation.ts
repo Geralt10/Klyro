@@ -57,8 +57,12 @@ export const changePasswordSchema = z.object({
     newPassword: passwordSchema,
   }).strict();
 
-export type RegisterUserInput =
-  z.infer<typeof registerSchema>;
+export const googleLoginSchema = z.object({
+    code: z.string().trim().min(1, "Authorization code is required."),
+  }).strict();
 
-export type LoginUserInput = 
-  z.infer<typeof loginSchema>;
+export type RegisterUserInput =z.infer<typeof registerSchema>;
+
+export type LoginUserInput = z.infer<typeof loginSchema>;
+
+export type GoogleLoginInput = z.infer<typeof googleLoginSchema>;  

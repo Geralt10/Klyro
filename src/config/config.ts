@@ -19,5 +19,5 @@ export const env = {
   SMTP_REFRESH_TOKEN:process.env.SMTP_REFRESH_TOKEN!,
 
   FRONTEND_URL:process.env.FRONTEND_URL!,
-
+  GOOGLE_REDIRECT_URI: process.env.GOOGLE_REDIRECT_URI!,
 };

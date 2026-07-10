@@ -1,10 +1,11 @@
 import { userModel } from "./user.model.js";
 import { ApiError } from "../../utils/ApiError.js";
-import { RegisterUserInput,LoginUserInput } from "./auth.validation.js";
+import { RegisterUserInput,LoginUserInput,GoogleLoginInput } from "./auth.validation.js";
 import { generateEmailVerificationToken, generateVerificationToken, hashToken } from "../../utils/token.utils.js";
 import { verifyRefreshToken } from "../../utils/jwt.utils.js";
 import { sendResetPasswordEmail, sendVerificationEmail } from "../../services/email.service.js";
 import bcrypt from "bcrypt";
+import { verifyGoogleCode } from "../../utils/google.js";
 
 //registerUser
 export const userRegister = async({
@@ -21,9 +22,14 @@ export const userRegister = async({
     } = generateEmailVerificationToken();
 
     if (existingUser) {
+
       if (existingUser.isVerified) {
-        throw new ApiError(409, "Email already registered.");
+        throw new ApiError(
+          409,
+          "Email already registered. Please login instead."
+        );
       }
+
       existingUser.name = name;
       existingUser.password = password;
       existingUser.verificationToken = verificationTokenHashed;
@@ -36,7 +42,10 @@ export const userRegister = async({
         verificationToken
       );
 
-      return existingUser;
+      return {
+        user: existingUser,
+        requiresEmailVerification: false,
+      };
     }
 
     const user = await userModel.create({    
@@ -52,7 +61,10 @@ export const userRegister = async({
       verificationToken
     );
 
-    return user;
+    return {
+      user,
+      requiresEmailVerification: true,
+    };
   }
 
 
@@ -65,6 +77,13 @@ export const loginUser = async ({
     
     if(!user){
         throw new ApiError(401,"Invalid email or Password");
+    }
+
+    if (!user.password) {
+      throw new ApiError(
+        400,
+        "This account uses Google Sign-In. Please continue with Google."
+      );
     }
     
     const isPasswordCorrect = await user.comparePassword(password);
@@ -163,7 +182,7 @@ export const logoutUser = async(refreshToken:string)=>{
 
   user.refreshToken="";
 
-  user.save({
+  await user.save({
     validateBeforeSave:false
   })
 
@@ -302,6 +321,13 @@ export const forgotPasswordService = async (
     return;
   }
 
+  if (!user.password) {
+    throw new ApiError(
+        400,
+        "Password reset is not available for Google accounts."
+    );
+  }
+
   const passwordResetToken = generateVerificationToken();
 
   const hashedPasswordResetToken =
@@ -339,6 +365,13 @@ export const changePasswordService = async (
     throw new ApiError(404, "User not found.");
   }
 
+  if (!user.password) {
+    throw new ApiError(
+        400,
+        "Password change is not available for Google accounts."
+    );
+  }
+
   if(!user.isVerified){
     throw new ApiError(403,"Email must be verified before changing the password");
   }
@@ -365,4 +398,75 @@ export const changePasswordService = async (
   user.refreshToken = "";
 
   await user.save();
+};
+
+
+
+export const googleLogin = async ({
+  code,
+}: GoogleLoginInput) => {
+  const profile = await verifyGoogleCode(code);
+
+  if (!profile.emailVerified) {
+    throw new ApiError(
+      401,
+      "Google account email is not verified."
+    );
+  }
+
+  // Existing Google account
+  let user = await userModel
+    .findOne({
+      googleId: profile.googleId,
+    })
+    .select("+refreshToken");
+
+  if (!user) {
+    // Check if email already belongs to another account
+    const existingUser = await userModel.findOne({
+      email: profile.email,
+    });
+
+    if (existingUser) {
+      throw new ApiError(
+        409,
+        "An account with this email already exists. Please sign in using your existing method."
+      );
+    }
+
+    // Create new Google account
+    user = await userModel.create({
+      name: profile.name,
+      email: profile.email,
+      googleId: profile.googleId,
+      avatar: profile.avatar,
+      isVerified: true,
+    });
+
+    user = await userModel
+      .findById(user._id)
+      .select("+refreshToken");
+
+    if (!user) {
+      throw new ApiError(
+        500,
+        "Failed to create Google account."
+      );
+    }
+  }
+
+  const accessToken = user.generateAccessToken();
+  const refreshToken = user.generateRefreshToken();
+
+  user.refreshToken = hashToken(refreshToken);
+
+  await user.save({
+    validateBeforeSave: false,
+  });
+
+  return {
+    user,
+    accessToken,
+    refreshToken,
+  };
 };

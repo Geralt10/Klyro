@@ -1,7 +1,7 @@
 import {Router}from "express";
 import { validate } from "../../middlewares/validate.js";
-import { changePasswordSchema, forgotPasswordSchema, loginSchema, registerSchema, resendVerificationSchema, resetPasswordSchema } from "./auth.validation.js";
-import { changePasswordController, forgotPasswordController, getMeController, loginController, logout, refresh, registerController, resendVerificationController, resetPasswordController, verifyEmailController } from "./auth.controller.js";
+import { changePasswordSchema, forgotPasswordSchema, googleLoginSchema, loginSchema, registerSchema, resendVerificationSchema, resetPasswordSchema } from "./auth.validation.js";
+import { changePasswordController, forgotPasswordController, getMeController, googleLoginController, loginController, logout, refresh, registerController, resendVerificationController, resetPasswordController, verifyEmailController } from "./auth.controller.js";
 import { authenticate } from "../../middlewares/auth.middleware.js";
 
 
@@ -22,8 +22,12 @@ authRouter.get("/verify-email",verifyEmailController);
 
 authRouter.post("/resend-verification",validate(resendVerificationSchema),resendVerificationController);
 
+authRouter.post("/forgot-password",validate(forgotPasswordSchema),forgotPasswordController);
+
 authRouter.post("/reset-password",validate(resetPasswordSchema),resetPasswordController);
 
 authRouter.patch("/change-password",authenticate,validate(changePasswordSchema),changePasswordController);
+
+authRouter.post("/google",validate(googleLoginSchema),googleLoginController);
 
 export default authRouter;
