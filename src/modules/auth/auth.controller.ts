@@ -1,25 +1,33 @@
 import { Request,Response } from "express";
 import { asyncHandler } from "../../utils/AsyncHandler.js";
 import { ApiResponse } from "../../utils/ApiResponse.js";
-import { changePasswordService, forgotPasswordService, getMe, loginUser, logoutUser, refreshAccessToken, resendVerificationService, resetPasswordService, userRegister, verifyEmailService } from "./auth.services.js";
+import { 
+  changePasswordService,
+  forgotPasswordService, 
+  getMe, 
+  loginUser, 
+  logoutUser, 
+  refreshAccessToken, 
+  resendVerificationService, 
+  resetPasswordService, 
+  userRegister, 
+  verifyEmailService,
+  googleLogin
+ } from "./auth.services.js";
 import { accessTokenCookieOptions, refreshTokenCookieOptions, } from "../../config/cookie.config.js";
 import { ApiError } from "../../utils/ApiError.js";
-import { googleLogin } from "./auth.services.js";
+
 
 
 //register
 export const registerController = asyncHandler(
     async(req:Request,res:Response)=>{
-        const { user, requiresEmailVerification } =await userRegister(req.body);
-
-        const message = requiresEmailVerification
-          ? "Registration successful. Please verify your email."
-          : "Registration successful.";
-
+        const { user } =await userRegister(req.body);
+        
         return res.status(201).json(
           new ApiResponse(
             201,
-            message,
+            "Registration successful. Please verify your email.",
             user
           )
         );

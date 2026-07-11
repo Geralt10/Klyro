@@ -44,7 +44,6 @@ export const userRegister = async({
 
       return {
         user: existingUser,
-        requiresEmailVerification: false,
       };
     }
 
@@ -63,7 +62,6 @@ export const userRegister = async({
 
     return {
       user,
-      requiresEmailVerification: true,
     };
   }
 
