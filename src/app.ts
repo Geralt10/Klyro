@@ -3,9 +3,12 @@ import authRouter from "./modules/auth/auth.routes.js";
 import { errorMiddleware } from "./middlewares/error.middleware.js";
 import cookieParser from "cookie-parser";
 import cors from "cors";
-
+import helmet from "helmet";
 
 const app = express();
+
+app.use(helmet());
+
 app.use(
   cors({
     origin: [
