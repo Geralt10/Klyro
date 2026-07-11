@@ -20,4 +20,9 @@ export const env = {
 
   FRONTEND_URL:process.env.FRONTEND_URL!,
   GOOGLE_REDIRECT_URI: process.env.GOOGLE_REDIRECT_URI!,
+
+  //admin
+  ADMIN_NAME:process.env.ADMIN_NAME!,
+  ADMIN_EMAIL:process.env.ADMIN_EMAIL!,
+  ADMIN_PASSWORD:process.env.ADMIN_PASSWORD!
 };
