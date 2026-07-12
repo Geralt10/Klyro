@@ -63,3 +63,16 @@ export const createSellerService = async (
     await session.endSession();
   }
 };
+
+//getSeller
+export const getSellerProfileService = async (
+  userId: Types.ObjectId
+) => {
+    const seller = await sellerModel.findOne({ userId });
+
+    if (!seller) {
+        throw new ApiError(404, "Seller profile not found.");
+    }
+
+    return seller;
+}

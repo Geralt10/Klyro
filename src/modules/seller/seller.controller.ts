@@ -1,10 +1,10 @@
 import { Request, Response } from "express";
 import { asyncHandler } from "../../utils/AsyncHandler.js";
-import { createSellerService } from "./seller.service.js";
+import { createSellerService, getSellerProfileService } from "./seller.service.js";
 import { ApiResponse } from "../../utils/ApiResponse.js";
 import { Types } from "mongoose";
 
-
+//createSeller
 export const createSellerController = asyncHandler(async (req:Request, res:Response) => {
     const userId = new Types.ObjectId(req.user.id);
     
@@ -21,3 +21,21 @@ export const createSellerController = asyncHandler(async (req:Request, res:Respo
     )
 );
 });
+
+//getSeller
+export const getSellerProfileController = asyncHandler(
+  async (req, res) => {
+    const userId = new Types.ObjectId(req.user.id);
+
+    const seller = await getSellerProfileService(userId);
+
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        "Seller profile fetched successfully.",
+        seller,
+      )
+    );
+  }
+);
+
