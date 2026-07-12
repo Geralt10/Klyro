@@ -13,6 +13,7 @@ export const env = {
   REFRESH_TOKEN_EXPIRY: process.env.REFRESH_TOKEN_EXPIRY!,
   NODE_ENV:process.env.NODE_ENV,
 
+  //google
   SMTP_USER: process.env.SMTP_USER!,
   SMTP_CLIENT_ID:process.env.SMTP_CLIENT_ID!,
   SMTP_CLIENT_SECRET:process.env.SMTP_CLIENT_SECRET!,
@@ -24,5 +25,10 @@ export const env = {
   //admin
   ADMIN_NAME:process.env.ADMIN_NAME!,
   ADMIN_EMAIL:process.env.ADMIN_EMAIL!,
-  ADMIN_PASSWORD:process.env.ADMIN_PASSWORD!
+  ADMIN_PASSWORD:process.env.ADMIN_PASSWORD!,
+
+  //imageKit
+  IMAGEKIT_PUBLIC_KEY:process.env.IMAGEKIT_PUBLIC_KEY!,
+  IMAGEKIT_PRIVATE_KEY:process.env.IMAGEKIT_PRIVATE_KEY!,
+  IMAGEKIT_URL_ENDPOINT:process.env.IMAGEKIT_URL_ENDPOINT!,
 };
