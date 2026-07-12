@@ -1,5 +1,6 @@
 import { Schema, Types, model } from "mongoose";
 import { IImage, imageSchema } from "../../shared/schemas/image.schema.js";
+import { DEFAULT_SELLER_IMAGE } from "../../constants/image.js";
 
 interface IBusinessAddress {
   addressLine1: string;
@@ -21,9 +22,9 @@ export interface ISeller {
 
   businessAddress: IBusinessAddress;
 
-  logo?: IImage;
+  logo: IImage;
 
-  banner?: IImage;
+  banner: IImage;
 
   isActive: boolean;
 }
@@ -96,25 +97,18 @@ const sellerSchema = new Schema<ISeller>(
 
     logo: {
       type: imageSchema,
-       default: {
-        url: "https://ik.imagekit.io/geralt7895/default/user.png",
-        fileId: "6a53dbcb5c7cd75eb81566d7",
-  },
+       default:DEFAULT_SELLER_IMAGE,
     },
 
     banner: {
       type: imageSchema,
-      default: {
-        url: "https://ik.imagekit.io/geralt7895/default/user.png",
-        fileId: "6a53dbcb5c7cd75eb81566d7",
+      default:DEFAULT_SELLER_IMAGE,
     },
-
     isActive: {
       type: Boolean,
       default: true,
     },
   },
-},
   {
     timestamps: true,
   }

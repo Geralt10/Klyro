@@ -7,6 +7,9 @@ import { CreateSellerInput, UpdateSellerInput } from "./seller.validation.js";
 
 import { ApiError } from "../../utils/ApiError.js";
 import { UserRole } from "../../constants/user.js";
+import { deleteImage, uploadImage } from "../../services/image.service.js";
+import { DEFAULT_SELLER_IMAGE } from "../../constants/image.js";
+import { logger } from "../../config/logger.js";
 
 
 //createSeller
@@ -104,6 +107,90 @@ export const updateSellerProfileService = async (
   seller.set(data);
 
   await seller.save();
+
+  return seller;
+};
+
+//updateLogo
+export const updateSellerLogoService = async (
+  userId: Types.ObjectId,
+  buffer: Buffer,
+  originalFilename: string
+) => {
+  const seller = await sellerModel.findOne({ userId });
+
+  if (!seller) {
+    throw new ApiError(404, "Seller profile not found.");
+  }
+
+  const oldLogo = seller.logo;
+
+  const uploadedLogo = await uploadImage(
+    buffer,
+    originalFilename,
+    "seller/logo"
+  );
+
+  seller.logo = uploadedLogo;
+
+  await seller.save();
+
+  if (oldLogo.fileId !== DEFAULT_SELLER_IMAGE.fileId) {
+    try {
+      await deleteImage(oldLogo.fileId);
+    } catch (error) {
+      logger.error(
+        {
+          err: error,
+          sellerId: seller._id,
+          fileId: oldLogo.fileId,
+        },
+        "Failed to delete old seller logo."
+      );
+    }
+  }
+
+  return seller;
+};
+
+//updateBanner
+export const updateSellerBannerService = async (
+  userId: Types.ObjectId,
+  buffer: Buffer,
+  originalFilename: string
+) => {
+  const seller = await sellerModel.findOne({ userId });
+
+  if (!seller) {
+    throw new ApiError(404, "Seller profile not found.");
+  }
+
+  const oldBanner = { ...seller.banner };
+
+  const uploadedBanner = await uploadImage(
+    buffer,
+    originalFilename,
+    "seller/banner"
+  );
+
+  seller.banner = uploadedBanner;
+
+  await seller.save();
+
+  if (oldBanner.fileId !== DEFAULT_SELLER_IMAGE.fileId) {
+    try {
+      await deleteImage(oldBanner.fileId);
+    } catch (error) {
+      logger.error(
+        {
+          err: error,
+          sellerId: seller._id,
+          fileId: oldBanner.fileId,
+        },
+        "Failed to delete old seller banner."
+      );
+    }
+  }
 
   return seller;
 };
