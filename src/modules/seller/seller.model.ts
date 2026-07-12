@@ -96,10 +96,17 @@ const sellerSchema = new Schema<ISeller>(
 
     logo: {
       type: imageSchema,
+       default: {
+        url: "https://ik.imagekit.io/geralt7895/default/user.png",
+        fileId: "6a53dbcb5c7cd75eb81566d7",
+  },
     },
 
     banner: {
       type: imageSchema,
+      default: {
+        url: "https://ik.imagekit.io/geralt7895/default/user.png",
+        fileId: "6a53dbcb5c7cd75eb81566d7",
     },
 
     isActive: {
@@ -107,6 +114,7 @@ const sellerSchema = new Schema<ISeller>(
       default: true,
     },
   },
+},
   {
     timestamps: true,
   }

@@ -16,6 +16,7 @@
   "description": "",
   "dependencies": {
     "@types/cors": "^2.8.19",
+    "@types/multer": "^2.2.0",
     "bcrypt": "^6.0.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
@@ -27,6 +28,7 @@
     "imagekit": "^6.0.0",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.7.3",
+    "multer": "^2.2.0",
     "nodemailer": "^9.0.3",
     "pino": "^10.3.1",
     "pino-pretty": "^13.1.3",

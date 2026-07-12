@@ -1,4 +1,5 @@
 import { UserRole } from "../constants/user.js";
+import { Multer } from "multer";
 
 declare global {
   namespace Express {
@@ -7,6 +8,10 @@ declare global {
         id: string;
         role: UserRole;
       };
+
+      file?: Multer.File;
+
+      files?: Multer.File[];
     }
   }
 }
