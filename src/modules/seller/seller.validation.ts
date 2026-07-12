@@ -2,8 +2,7 @@ import { z } from "zod";
 
 const storeNameRegex = /^[a-z0-9][a-z0-9\s_-]*$/;
 
-const businessAddressSchema = z
-  .object({
+const businessAddressSchema = z.object({
     addressLine1: z
       .string({
         error: "Address line 1 must be a string.",
@@ -52,11 +51,9 @@ const businessAddressSchema = z
       .trim()
       .min(3, "Postal code must be at least 3 characters.")
       .max(20, "Postal code cannot exceed 20 characters."),
-  })
-  .strict();
+  }).strict();
 
-  export const createSellerSchema = z
-  .object({
+  export const createSellerSchema = z.object({
     storeName: z
       .string({
         error: "Store name must be a string.",
@@ -88,15 +85,20 @@ const businessAddressSchema = z
       .optional(),
 
     businessAddress: businessAddressSchema,
-  })
-  .strict();
+  }).strict();
 
   export const updateSellerSchema = createSellerSchema
   .partial()
   .extend({
     businessAddress: businessAddressSchema.optional(),
   })
-  .strict();
+  .strict()
+  .refine(
+    (data) => Object.keys(data).length > 0,
+    {
+      message: "At least one field must be provided for update.",
+    }
+  );
 
 
 export type CreateSellerInput = z.infer<typeof createSellerSchema>;

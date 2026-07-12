@@ -3,7 +3,7 @@ import mongoose, { Types } from "mongoose";
 import { sellerModel } from "./seller.model.js";
 import { userModel } from "../auth/user.model.js";
 
-import { CreateSellerInput } from "./seller.validation.js";
+import { CreateSellerInput, UpdateSellerInput } from "./seller.validation.js";
 
 import { ApiError } from "../../utils/ApiError.js";
 import { UserRole } from "../../constants/user.js";
@@ -76,3 +76,34 @@ export const getSellerProfileService = async (
 
     return seller;
 }
+
+//updateSellerProfile
+export const updateSellerProfileService = async (
+  userId: Types.ObjectId,
+  data: UpdateSellerInput
+) => {
+  const seller = await sellerModel.findOne({ userId });
+
+  if (!seller) {
+    throw new ApiError(404, "Seller profile not found.");
+  }
+
+  if (
+    data.storeName !== undefined &&
+    data.storeName !== seller.storeName
+  ) {
+    const existingStore = await sellerModel.findOne({
+      storeName: data.storeName,
+    });
+
+    if (existingStore) {
+      throw new ApiError(409, "Store name already exists.");
+    }
+  }
+
+  seller.set(data);
+
+  await seller.save();
+
+  return seller;
+};
