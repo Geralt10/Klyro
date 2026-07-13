@@ -2,15 +2,15 @@
 
 A production-oriented multi-vendor marketplace backend built with **Node.js**, **Express.js**, **TypeScript**, and **MongoDB**.
 
-The project follows a layered architecture with a strong focus on clean code, security, scalability, and maintainability.
+The project follows a layered architecture with a strong focus on **clean code**, **security**, **maintainability**, and **scalability**.
 
 > 🚧 Project Status: Active Development
 
 ---
 
-## Features
+# Features
 
-### ✅ Authentication
+## ✅ Authentication
 
 - User Registration
 - User Login
@@ -24,22 +24,31 @@ The project follows a layered architecture with a strong focus on clean code, se
 - Logout
 - Get Current User
 
-### 🚧 Upcoming
+---
 
-- Seller Module
-- Product Module
-- Cart
-- Wishlist
-- Orders
-- Reviews
-- Dashboard
-- Redis Caching
-- Rate Limiting
-- Graceful Shutdown
+## ✅ Authorization
+
+- Role-Based Authorization
+- Protected Routes
+- Seller Authorization
+- Admin Authorization (Foundation)
 
 ---
 
-## Tech Stack
+## ✅ Seller Module
+
+- Become a Seller
+- Get Seller Profile
+- Update Seller Profile
+- Update Seller Logo
+- Update Seller Banner
+- Image Upload with ImageKit
+- Automatic Old Image Cleanup
+- MongoDB Transactions (Seller Creation)
+
+---
+
+# Tech Stack
 
 | Category | Technology |
 |----------|------------|
@@ -52,13 +61,15 @@ The project follows a layered architecture with a strong focus on clean code, se
 | Authentication | JWT |
 | OAuth | Google OAuth 2.0 |
 | Password Hashing | bcrypt |
+| Image Storage | ImageKit |
+| File Upload | Multer |
 | Email | Nodemailer |
 | Logging | Pino |
 | Security | Helmet |
 
 ---
 
-## Project Structure
+# Project Structure
 
 ```text
 src/
@@ -66,15 +77,24 @@ src/
 ├── constants/
 ├── middlewares/
 ├── modules/
-│   └── auth/
+│   ├── auth/
+│   └── seller/
 ├── types/
 └── utils/
 ```
 
-The project follows a layered architecture:
+---
+
+# Architecture
+
+The project follows a layered architecture.
 
 ```text
-Route
+Routes
+    ↓
+Authentication
+    ↓
+Authorization
     ↓
 Validation
     ↓
@@ -87,26 +107,35 @@ Model
 MongoDB
 ```
 
-Business logic lives inside **Services**, while Controllers only handle HTTP requests and responses.
+### Responsibilities
+
+- **Routes** → API definitions
+- **Authentication** → Verify user identity
+- **Authorization** → Check route permissions
+- **Validation** → Validate incoming requests
+- **Controllers** → Handle HTTP requests & responses
+- **Services** → Business logic
+- **Models** → Database interaction
 
 ---
 
-## Security Features
+# Security Features
 
 - JWT Authentication
+- Role-Based Authorization
 - Refresh Token Rotation
-- SHA256 Hashed Refresh Tokens
+- SHA-256 Hashed Refresh Tokens
 - HTTP-only Cookies
 - Secure Cookies (Production)
 - SameSite Strict Cookies
 - Password Hashing with bcrypt
-- Google Authorization Code Flow
 - Helmet Security Headers
+- Google OAuth 2.0
 - Centralized Error Handling
 
 ---
 
-## Authentication Flow
+# Authentication Flow
 
 ```text
 Register
@@ -124,23 +153,24 @@ Authenticated Requests
 
 ---
 
-## Current Roadmap
+# Current Roadmap
 
 - ✅ Authentication
-- 🚧 Seller Module
-- ⏳ Product Module
+- ✅ Authorization
+- ✅ Seller Module
+- 🚧 Product Module
 - ⏳ Cart
 - ⏳ Wishlist
 - ⏳ Orders
 - ⏳ Reviews
 - ⏳ Dashboard
-- ⏳ Redis
+- ⏳ Redis Caching
 - ⏳ Rate Limiting
 - ⏳ Graceful Shutdown
 
 ---
 
-## Installation
+# Installation
 
 ```bash
 git clone <repository-url>
@@ -160,11 +190,9 @@ npm run dev
 
 ---
 
-## Git Workflow
+# Git Workflow
 
 Each feature is developed in an isolated feature branch.
-
-Example:
 
 ```text
 main
@@ -172,7 +200,6 @@ main
 ├── feature/auth
 ├── feature/seller
 ├── feature/product
-├── feature/order
 └── ...
 ```
 
@@ -180,35 +207,19 @@ Only tested and reviewed code is merged into `main`.
 
 ---
 
-## Project Philosophy
+# Project Philosophy
 
-- Production-first architecture
+- Production-First Development
 - Business Rules First
-- Clean Architecture
-- Feature-based Modules
+- Feature-Based Architecture
 - Separation of Concerns
 - Secure by Default
+- Reusable Components
 - Scalable Design
 - Maintainable Codebase
 
 ---
 
-## Current Status
-
-### Completed
-
-- Authentication Module
-- Google OAuth
-- Helmet Integration
-- Pino Logger
-- Centralized Error Handling
-
-### In Progress
-
-- Seller Module
-
----
-
-## License
+# License
 
 This project is developed for learning production-grade backend architecture and modern software engineering practices.
