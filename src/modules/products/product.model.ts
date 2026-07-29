@@ -9,25 +9,9 @@ import {
   ProductSize,
   ProductStatus,
 } from "./product.enums.js";
+import { imageSchema } from "../../shared/schemas/image.schema.js";
 
-const ProductImageSchema = new Schema(
-  {
-    url: {
-      type: String,
-      required: true,
-      trim: true,
-    },
 
-    fileId: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-  },
-  {
-    _id: false,
-  }
-);
 
 const ProductInventorySchema = new Schema(
   {
@@ -51,8 +35,8 @@ const ProductInventorySchema = new Schema(
 
 
 const ProductSchema = new Schema<IProduct>(
-  {
-    seller: {
+{
+  seller: {
   type: Schema.Types.ObjectId,
   ref: "Seller",
   required: true,
@@ -111,14 +95,14 @@ color: {
 basePrice: {
   type: Number,
   required: true,
-  min: 0,
+  min: 1,
 },
 
 discountPercentage: {
   type: Number,
   default: 0,
   min: 0,
-  max: 100,
+  max: 99,
 },
 
 inventory: {
@@ -127,7 +111,7 @@ inventory: {
 },
 
 images: {
-  type: [ProductImageSchema],
+  type: [imageSchema],
   required: true,
 },
 

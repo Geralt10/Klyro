@@ -1,4 +1,4 @@
-import { Document, Types } from "mongoose";
+import { Types } from "mongoose";
 
 import {
   ProductCategory,
@@ -7,9 +7,10 @@ import {
   ProductStatus,
 } from "./product.enums.js";
 
-import { ProductImage, ProductInventory } from "./product.types.js";
+import { ProductInventory } from "./product.types.js";
+import { IImage } from "../../shared/schemas/image.schema.js";
 
-export interface IProduct extends Document {
+export interface IProduct{
   seller: Types.ObjectId;
 
   name: string;
@@ -34,7 +35,7 @@ export interface IProduct extends Document {
 
   inventory: ProductInventory[];
 
-  images: ProductImage[];
+  images: IImage[];
 
   status: ProductStatus;
 

@@ -63,3 +63,26 @@ export const deleteImage = async (
     throw new ApiError(500, "Failed to delete image.");
   }
 };
+
+
+export const uploadImages = async (
+  files: Express.Multer.File[],
+  folder: string
+): Promise<IImage[]> => {
+  return Promise.all(
+    files.map((file) =>
+      uploadImage(
+        file.buffer,
+        file.originalname,
+        folder
+      )
+    )
+  );
+};
+
+export const deleteImages = async (
+  fileIds: string[]
+): Promise<void> => {
+  await Promise.all(fileIds.map((fileId) => deleteImage(fileId)));
+};
+
