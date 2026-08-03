@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { asyncHandler } from "../../../utils/AsyncHandler.js";
-import { createProductService, getSellerProductByIdService, getSellerProductsService, updateProductService } from "../services/sellerProduct.service.js";
+import { changeProductStatusService, createProductService, getSellerProductByIdService, getSellerProductsService, updateProductService } from "../services/sellerProduct.service.js";
 import { ApiResponse } from "../../../utils/ApiResponse.js";
 import { GetSellerProductsQuery } from "../getSellerProductsQuerySchema.js";
 import { Types } from "mongoose";
@@ -78,6 +78,27 @@ export const updateProductController = asyncHandler(
       new ApiResponse(
         200,
         "Product updated successfully.",
+        product
+      )
+    );
+  }
+);
+
+
+export const changeProductStatusController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { productId } = req.params as ProductIdParams;
+
+    const product = await changeProductStatusService(
+      req.user.id,
+      productId,
+      req.body.status
+    );
+
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        "Product status updated successfully.",
         product
       )
     );

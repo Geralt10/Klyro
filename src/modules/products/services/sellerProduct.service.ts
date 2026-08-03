@@ -8,7 +8,7 @@ import { generateUniqueSlug } from "../../../utils/slug.js";
 import { productModel } from "../product.model.js";
 import { GetSellerProductsQuery } from "../getSellerProductsQuerySchema.js";
 import { IProduct } from "../product.interface.js";
-import { ProductSort } from "../product.enums.js";
+import { ProductSort, ProductStatus } from "../product.enums.js";
 import { logger } from "../../../config/logger.js";
 
 
@@ -333,4 +333,42 @@ export const updateProductService = async (
 
     throw error;
   }
+};
+
+
+
+
+
+export const changeProductStatusService = async (
+  userId: string,
+  productId: string,
+  status: ProductStatus
+) => {
+  const seller = await sellerModel.findOne({ userId });
+
+  if (!seller) {
+    throw new ApiError(404, "Seller profile not found.");
+  }
+
+  const product = await productModel.findOne({
+    _id: productId,
+    seller: seller._id,
+  });
+
+  if (!product) {
+    throw new ApiError(404, "Product not found.");
+  }
+
+  if (product.status === status) {
+    throw new ApiError(
+      400,
+      `Product is already ${status}.`
+    );
+  }
+
+  product.status = status;
+
+  await product.save();
+
+  return product;
 };
