@@ -12,6 +12,10 @@ declare global {
       file?: Multer.File;
 
       files?: Multer.File[];
+
+      validatedBody?: unknown;
+      validatedQuery?: unknown;
+      validatedParams?: unknown;
     }
   }
 }

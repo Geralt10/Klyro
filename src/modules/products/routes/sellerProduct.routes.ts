@@ -4,8 +4,11 @@ import { authorize } from "../../../middlewares/authorize.middleware.js";
 import { upload } from "../../../config/multer.js";
 import { UserRole } from "../../../constants/user.js";
 import { validate } from "../../../middlewares/validate.js";
-import { createProductSchema } from "../product.validation.js";
-import { createProductController } from "../controllers/sellerProduct.controller.js";
+import { createProductSchema, productIdParamsSchema } from "../product.validation.js";
+import { createProductController, getSellerProductByIdController, getSellerProductsController } from "../controllers/sellerProduct.controller.js";
+import { getSellerProductsQuerySchema } from "../getSellerProductsQuerySchema.js";
+import { validateQuery } from "../../../middlewares/validateQuery.middleware.js";
+import { validateParams } from "../../../middlewares/validateParams.middleware.js";
 
 
 
@@ -20,6 +23,23 @@ sellerProductRouter.post(
   upload.array("images", 5),
   validate(createProductSchema),
   createProductController
+);
+
+sellerProductRouter.get(
+  "/",
+  authenticate,
+  authorize(UserRole.SELLER),
+  validateQuery(getSellerProductsQuerySchema),
+  getSellerProductsController
+);
+
+
+sellerProductRouter.get(
+  "/:productId",
+  authenticate,
+  authorize(UserRole.SELLER),
+  validateParams(productIdParamsSchema),
+  getSellerProductByIdController
 );
 
 

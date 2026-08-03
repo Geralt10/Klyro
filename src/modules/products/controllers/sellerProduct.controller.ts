@@ -1,11 +1,10 @@
 import { Request, Response } from "express";
 import { asyncHandler } from "../../../utils/AsyncHandler.js";
-import { createProductService } from "../services/sellerProduct.service.js";
+import { createProductService, getSellerProductByIdService, getSellerProductsService } from "../services/sellerProduct.service.js";
 import { ApiResponse } from "../../../utils/ApiResponse.js";
-
-
-
-
+import { GetSellerProductsQuery } from "../getSellerProductsQuerySchema.js";
+import { Types } from "mongoose";
+import { ProductIdParams } from "../product.validation.js";
 
 
 
@@ -22,5 +21,44 @@ export const createProductController = asyncHandler(
     return res
       .status(201)
       .json(new ApiResponse(201, "Product created successfully.",product));
+  }
+);
+
+
+export const getSellerProductsController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const result = await getSellerProductsService(
+      req.user.id,
+      req.validatedQuery as GetSellerProductsQuery
+    );
+
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        "Seller products fetched successfully.",
+        result
+      )
+    );
+  }
+);
+
+
+export const getSellerProductByIdController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { productId } =
+      req.validatedParams as ProductIdParams;
+
+    const product = await getSellerProductByIdService(
+      req.user.id,
+      new Types.ObjectId(productId)
+    );
+
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        "Product fetched successfully.",
+        product
+      )
+    );
   }
 );

@@ -122,3 +122,12 @@ export const productIdParamSchema = z
 
 
 export type CreateProductInput = z.infer<typeof createProductSchema>;
+
+
+export const productIdParamsSchema = z.object({
+  productId: z.string().regex(/^[0-9a-fA-F]{24}$/),
+});
+
+export type ProductIdParams = z.infer<
+  typeof productIdParamsSchema
+>;
