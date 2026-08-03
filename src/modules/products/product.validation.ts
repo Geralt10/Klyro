@@ -1,14 +1,14 @@
-import { string, z } from "zod";
+import { z } from "zod";
 
 import {
   ProductCategory,
   ProductFit,
   ProductGender,
   ProductSize,
-  ProductStatus
+  ProductStatus,
 } from "./product.enums.js";
-import { objectIdSchema } from "../../shared/validations/objectId.validation.js";
 
+import { objectIdSchema } from "../../shared/validations/objectId.validation.js";
 
 const productInventorySchema = z
   .object({
@@ -48,22 +48,23 @@ const productBaseSchema = z
       .trim()
       .min(2)
       .max(50),
-      
+
     status: z.enum(ProductStatus).optional(),
 
     basePrice: z.coerce.number().positive(),
 
-    discountPercentage: z.coerce.number().min(0).max(100),
+    discountPercentage: z.coerce.number().min(0).max(99),
 
-   inventory: z.preprocess(
-  (value) => {
-    if (typeof value === "string") {
-      return JSON.parse(value);
-    }
-    return value;
-  },
-  z.array(productInventorySchema)
-)
+    inventory: z.preprocess(
+      (value) => {
+        if (typeof value === "string") {
+          return JSON.parse(value);
+        }
+
+        return value;
+      },
+      z.array(productInventorySchema).min(1)
+    ),
   })
   .strict();
 
@@ -86,8 +87,7 @@ const validateUniqueInventorySizes = (
 
     seenSizes.add(size);
   });
-};  
-
+};
 
 export const createProductSchema = productBaseSchema.superRefine(
   ({ inventory }, ctx) => {
@@ -97,37 +97,38 @@ export const createProductSchema = productBaseSchema.superRefine(
 
 export const updateProductSchema = productBaseSchema
   .partial()
+  .extend({
+    deletedImageIds: z.preprocess(
+      (value) => {
+        if (typeof value === "string") {
+          return JSON.parse(value);
+        }
+
+        return value;
+      },
+      z.array(z.string())
+    ).optional(),
+  })
   .superRefine((data, ctx) => {
-    if (!data.inventory) return;
-
-    validateUniqueInventorySizes(data.inventory, ctx);
+    if (data.inventory) {
+      validateUniqueInventorySizes(data.inventory, ctx);
+    }
   });
-
 
 export const changeProductStatusSchema = z
   .object({
     status: z.enum(ProductStatus),
   })
-  .strict();  
-  
+  .strict();
 
-export const productIdParamSchema = z
+export const productIdParamsSchema = z
   .object({
     productId: objectIdSchema,
   })
-  .strict();  
-
-
-
-
+  .strict();
 
 export type CreateProductInput = z.infer<typeof createProductSchema>;
 
+export type UpdateProductInput = z.infer<typeof updateProductSchema>;
 
-export const productIdParamsSchema = z.object({
-  productId: z.string().regex(/^[0-9a-fA-F]{24}$/),
-});
-
-export type ProductIdParams = z.infer<
-  typeof productIdParamsSchema
->;
+export type ProductIdParams = z.infer<typeof productIdParamsSchema>;

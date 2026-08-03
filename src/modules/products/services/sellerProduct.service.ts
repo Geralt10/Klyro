@@ -1,5 +1,5 @@
 import { SortOrder, Types, QueryFilter} from "mongoose";
-import { CreateProductInput } from "../product.validation.js";
+import { CreateProductInput, UpdateProductInput } from "../product.validation.js";
 import { IImage } from "../../../shared/schemas/image.schema.js";
 import { sellerModel } from "../../seller/seller.model.js";
 import { ApiError } from "../../../utils/ApiError.js";
@@ -9,6 +9,7 @@ import { productModel } from "../product.model.js";
 import { GetSellerProductsQuery } from "../getSellerProductsQuerySchema.js";
 import { IProduct } from "../product.interface.js";
 import { ProductSort } from "../product.enums.js";
+import { logger } from "../../../config/logger.js";
 
 
 
@@ -184,4 +185,152 @@ export const getSellerProductByIdService = async (
   }
 
   return product;
+};
+
+
+
+export const updateProductService = async (
+  userId: string,
+  productId: Types.ObjectId,
+  data: UpdateProductInput,
+  files: Express.Multer.File[]
+) => {
+  let uploadedImages: IImage[] = [];
+
+  try {
+    const seller = await sellerModel.findOne({ userId });
+
+    if (!seller) {
+      throw new ApiError(404, "Seller profile not found.");
+    }
+
+    const product = await productModel.findOne({
+      _id: productId,
+      seller: seller._id,
+    });
+
+    if (!product) {
+      throw new ApiError(404, "Product not found.");
+    }
+
+    const hasUpdates =
+      Object.keys(data).some((key) => {
+        if (key === "deletedImageIds") {
+          return (data.deletedImageIds?.length ?? 0) > 0;
+        }
+
+        return true;
+      }) || files.length > 0;
+
+    if (!hasUpdates) {
+      throw new ApiError(400, "Nothing to update.");
+    }
+
+    let slug = product.slug;
+
+    if (data.name && data.name !== product.name) {
+      const existingProduct = await productModel.exists({
+        seller: seller._id,
+        name: data.name,
+        _id: {
+          $ne: product._id,
+        },
+      });
+
+      if (existingProduct) {
+        throw new ApiError(
+          409,
+          "Product with this name already exists."
+        );
+      }
+
+      slug = await generateUniqueSlug(
+        data.name,
+        async (slug) =>
+          !!(
+            await productModel.exists({
+              slug,
+              _id: {
+                $ne: product._id,
+              },
+            })
+          )
+      );
+    }
+
+    if (files.length > 0) {
+      uploadedImages = await uploadImages(
+        files,
+        "products"
+      );
+    }
+
+    const deletedImageIds = data.deletedImageIds ?? [];
+
+    const remainingImages = product.images.filter(
+      (image) => !deletedImageIds.includes(image.fileId)
+    );
+
+    const updatedImages = [
+      ...remainingImages,
+      ...uploadedImages,
+    ];
+
+    if (updatedImages.length < 3) {
+      throw new ApiError(
+        400,
+        "Product must contain at least 3 image."
+      );
+    }
+
+    const {
+      deletedImageIds: _deletedImageIds,
+      ...updateData
+    } = data;
+
+    Object.assign(product, {
+      ...updateData,
+      slug,
+      images: updatedImages,
+    });
+
+    await product.save();
+
+    if (deletedImageIds.length > 0) {
+      try {
+        await deleteImages(deletedImageIds);
+      } catch (error) {
+        logger.error(
+          {
+            productId: product._id,
+            deletedImageIds,
+            error,
+          },
+          "Failed to delete product images from ImageKit."
+        );
+      }
+    }
+
+    return product;
+  } catch (error) {
+    if (uploadedImages.length > 0) {
+      try {
+        await deleteImages(
+          uploadedImages.map(
+            (image) => image.fileId
+          )
+        );
+      } catch (rollbackError) {
+        logger.error(
+          {
+            uploadedImages,
+            rollbackError,
+          },
+          "Failed to rollback uploaded images."
+        );
+      }
+    }
+
+    throw error;
+  }
 };

@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { asyncHandler } from "../../../utils/AsyncHandler.js";
-import { createProductService, getSellerProductByIdService, getSellerProductsService } from "../services/sellerProduct.service.js";
+import { createProductService, getSellerProductByIdService, getSellerProductsService, updateProductService } from "../services/sellerProduct.service.js";
 import { ApiResponse } from "../../../utils/ApiResponse.js";
 import { GetSellerProductsQuery } from "../getSellerProductsQuerySchema.js";
 import { Types } from "mongoose";
@@ -57,6 +57,27 @@ export const getSellerProductByIdController = asyncHandler(
       new ApiResponse(
         200,
         "Product fetched successfully.",
+        product
+      )
+    );
+  }
+);
+
+
+export const updateProductController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { productId } = req.validatedParams as ProductIdParams;
+    const product = await updateProductService(
+      req.user.id,
+      new Types.ObjectId(productId),
+      req.body,
+      req.files as Express.Multer.File[]
+    );
+
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        "Product updated successfully.",
         product
       )
     );
