@@ -167,7 +167,7 @@ export const getSellerProductsService = async (
 
 export const getSellerProductByIdService = async (
   userId: string,
-  productId: Types.ObjectId
+  productId: string
 ) => {
   const seller = await sellerModel.findOne({ userId });
 
@@ -191,7 +191,7 @@ export const getSellerProductByIdService = async (
 
 export const updateProductService = async (
   userId: string,
-  productId: Types.ObjectId,
+  productId: string,
   data: UpdateProductInput,
   files: Express.Multer.File[]
 ) => {

@@ -50,7 +50,7 @@ export const getSellerProductByIdController = asyncHandler(
 
     const product = await getSellerProductByIdService(
       req.user.id,
-      new Types.ObjectId(productId)
+      productId
     );
 
     return res.status(200).json(
@@ -69,7 +69,7 @@ export const updateProductController = asyncHandler(
     const { productId } = req.validatedParams as ProductIdParams;
     const product = await updateProductService(
       req.user.id,
-      new Types.ObjectId(productId),
+      productId,
       req.body,
       req.files as Express.Multer.File[]
     );
