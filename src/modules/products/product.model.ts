@@ -154,4 +154,4 @@ ProductSchema.virtual("finalPrice").get(function () {
   );
 });
 
-export const Product = mongoose.model<IProduct>("Product",ProductSchema);
+export const productModel = mongoose.model<IProduct>("Product",ProductSchema);

@@ -5,6 +5,7 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import helmet from "helmet";
 import sellerRouter from "./modules/seller/seller.routes.js";
+import sellerProductRouter from "./modules/products/routes/sellerProduct.routes.js";
 
 const app = express();
 
@@ -24,6 +25,7 @@ app.use(cookieParser())
 
 app.use("/api/v1/auth",authRouter);
 app.use("/api/v1/seller",sellerRouter);
+app.use("/api/v1/seller/products",sellerProductRouter)
 
 
 app.use(errorMiddleware);

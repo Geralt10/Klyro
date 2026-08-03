@@ -48,14 +48,22 @@ const productBaseSchema = z
       .trim()
       .min(2)
       .max(50),
+      
+    status: z.enum(ProductStatus).optional(),
 
-    basePrice: z.number().positive(),
+    basePrice: z.coerce.number().positive(),
 
-    discountPercentage: z.number().min(0).max(100),
+    discountPercentage: z.coerce.number().min(0).max(100),
 
-    inventory: z
-      .array(productInventorySchema)
-      .min(1),
+   inventory: z.preprocess(
+  (value) => {
+    if (typeof value === "string") {
+      return JSON.parse(value);
+    }
+    return value;
+  },
+  z.array(productInventorySchema)
+)
   })
   .strict();
 
@@ -108,3 +116,9 @@ export const productIdParamSchema = z
     productId: objectIdSchema,
   })
   .strict();  
+
+
+
+
+
+export type CreateProductInput = z.infer<typeof createProductSchema>;
