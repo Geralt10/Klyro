@@ -1,6 +1,6 @@
 import z from "zod";
 import { ProductCategory, ProductGender, ProductSize, ProductSort, ProductStatus } from "./product.enums.js";
-
+import { objectIdSchema } from "../../shared/validations/objectId.validation.js";
 
 
 export const getSellerProductsQuerySchema = z
@@ -62,6 +62,29 @@ export const getProductQuerySchema = z
       });
     }
   }); 
+
+export const getAdminProductsQuerySchema = z
+  .object({
+    page: z.coerce.number().int().min(1).default(1),
+
+    limit: z.coerce.number().int().min(1).max(50).default(10),
+
+    search: z.string().trim().optional(),
+
+    category: z.enum(ProductCategory).optional(),
+
+    status: z.enum(ProductStatus).optional(),
+
+    sellerId: objectIdSchema.optional(),
+
+    sort: z.enum(ProductSort).default(ProductSort.NEWEST),
+  })
+  .strict();
+
+export type GetAdminProductsQuery = z.infer<
+  typeof getAdminProductsQuerySchema
+>;
+
   
 export type GetProductsQuery = z.infer<typeof getProductQuerySchema>;  
 

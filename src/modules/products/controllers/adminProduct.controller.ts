@@ -1,20 +1,18 @@
 import { Request, Response } from "express";
 import { ApiResponse } from "../../../utils/ApiResponse.js";
 import { asyncHandler } from "../../../utils/AsyncHandler.js";
-import { GetProductsQuery } from "../getProductsQuerySchema.js";
+import { GetAdminProductsQuery } from "../getProductsQuerySchema.js";
 import { ProductIdParams } from "../product.validation.js";
 import {
-  getBuyerProductByIdService,
-  getBuyerProductsService,
-} from "../services/buyerProduct.service.js";
+  getAdminProductByIdService,
+  getAdminProductsService,
+} from "../services/adminProduct.service.js";
 
-export const getBuyerProductsController =
-  asyncHandler(async (req, res) => {
-    const query =
-      req.validatedQuery as GetProductsQuery;
-
-    const result =
-      await getBuyerProductsService(query);
+export const getAdminProductsController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const result = await getAdminProductsService(
+      req.validatedQuery as GetAdminProductsQuery
+    );
 
     return res.status(200).json(
       new ApiResponse(
@@ -23,15 +21,17 @@ export const getBuyerProductsController =
         result
       )
     );
-  });
+  }
+);
 
-export const getBuyerProductByIdController =
-  asyncHandler(async (req: Request, res: Response) => {
+export const getAdminProductByIdController = asyncHandler(
+  async (req: Request, res: Response) => {
     const { productId } =
       req.validatedParams as ProductIdParams;
 
-    const product =
-      await getBuyerProductByIdService(productId);
+    const product = await getAdminProductByIdService(
+      productId
+    );
 
     return res.status(200).json(
       new ApiResponse(
@@ -40,4 +40,5 @@ export const getBuyerProductByIdController =
         product
       )
     );
-  });
+  }
+);

@@ -3,13 +3,7 @@ import { GetProductsQuery } from "../getProductsQuerySchema.js";
 import { IProduct } from "../product.interface.js";
 import { ProductSort, ProductStatus } from "../product.enums.js";
 import { productModel } from "../product.model.js";
-
-
-
-
-
-
-
+import { ApiError } from "../../../utils/ApiError.js";
 
 export const getBuyerProductsService = async (
   query: GetProductsQuery
@@ -36,18 +30,18 @@ export const getBuyerProductsService = async (
 
   if (search) {
     match.$or = [
-        {
-            name: {
-            $regex: search,
-            $options: "i",
-            },
+      {
+        name: {
+          $regex: search,
+          $options: "i",
         },
-        {
+      },
+      {
         brand: {
-            $regex: search,
-            $options: "i",
+          $regex: search,
+          $options: "i",
         },
-        },
+      },
     ];
   }
 
@@ -61,155 +55,172 @@ export const getBuyerProductsService = async (
 
   if (brand) {
     match.brand = {
-     $regex: brand,
-     $options: "i",
+      $regex: brand,
+      $options: "i",
     };
   }
 
   if (color) {
-  match.color = {
-    $regex: color,
-    $options: "i",
-  };
-}
-
-if (size) {
-  match.inventory = {
-    $elemMatch: {
-      size,
-      stock: {
-        $gt: 0,
-      },
-    },
-  };
-}
-
-pipeline.push({
-  $match: match,
-});
-
-
-pipeline.push({
-  $addFields: {
-    finalPrice: {
-      $subtract: [
-        "$basePrice",
-        {
-          $multiply: [
-            "$basePrice",
-            {
-              $divide: [
-                "$discountPercentage",
-                100,
-              ],
-            },
-          ],
-        },
-      ],
-    },
-  },
-});
-
-if (
-  minPrice !== undefined ||
-  maxPrice !== undefined
-) {
-  const priceFilter: Record<
-    string,
-    number
-  > = {};
-
-  if (minPrice !== undefined) {
-    priceFilter.$gte = minPrice;
+    match.color = {
+      $regex: color,
+      $options: "i",
+    };
   }
 
-  if (maxPrice !== undefined) {
-    priceFilter.$lte = maxPrice;
+  if (size) {
+    match.inventory = {
+      $elemMatch: {
+        size,
+        stock: {
+          $gt: 0,
+        },
+      },
+    };
   }
 
   pipeline.push({
-    $match: {
-      finalPrice: priceFilter,
+    $match: match,
+  });
+
+  pipeline.push({
+    $addFields: {
+      finalPrice: {
+        $subtract: [
+          "$basePrice",
+          {
+            $multiply: [
+              "$basePrice",
+              {
+                $divide: [
+                  "$discountPercentage",
+                  100,
+                ],
+              },
+            ],
+          },
+        ],
+      },
     },
   });
-}
 
-const sortMap: Record<
-  ProductSort,
-  Record<string, 1 | -1>
-> = {
-  [ProductSort.NEWEST]: {
-    createdAt: -1,
-  },
+  if (
+    minPrice !== undefined ||
+    maxPrice !== undefined
+  ) {
+    const priceFilter: Record<
+      string,
+      number
+    > = {};
 
-  [ProductSort.OLDEST]: {
-    createdAt: 1,
-  },
+    if (minPrice !== undefined) {
+      priceFilter.$gte = minPrice;
+    }
 
-  [ProductSort.PRICE_ASC]: {
-    finalPrice: 1,
-  },
+    if (maxPrice !== undefined) {
+      priceFilter.$lte = maxPrice;
+    }
 
-  [ProductSort.PRICE_DESC]: {
-    finalPrice: -1,
-  },
-
-  [ProductSort.NAME_ASC]: {
-    name: 1,
-  },
-
-  [ProductSort.NAME_DESC]: {
-    name: -1,
-  },
-};
-
-pipeline.push({
-  $sort: sortMap[sort],
-});
-
-const skip = (page - 1) * limit;
-
-pipeline.push({
-  $facet: {
-    products: [
-      {
-        $skip: skip,
+    pipeline.push({
+      $match: {
+        finalPrice: priceFilter,
       },
-      {
-        $limit: limit,
-      },
-      {
-        $project: {
-          __v: 0,
+    });
+  }
+
+  const sortMap: Record<
+    ProductSort,
+    Record<string, 1 | -1>
+  > = {
+    [ProductSort.NEWEST]: {
+      createdAt: -1,
+    },
+
+    [ProductSort.OLDEST]: {
+      createdAt: 1,
+    },
+
+    [ProductSort.PRICE_ASC]: {
+      finalPrice: 1,
+    },
+
+    [ProductSort.PRICE_DESC]: {
+      finalPrice: -1,
+    },
+
+    [ProductSort.NAME_ASC]: {
+      name: 1,
+    },
+
+    [ProductSort.NAME_DESC]: {
+      name: -1,
+    },
+  };
+
+  pipeline.push({
+    $sort: sortMap[sort],
+  });
+
+  const skip = (page - 1) * limit;
+
+  pipeline.push({
+    $facet: {
+      products: [
+        {
+          $skip: skip,
         },
-      },
-    ],
+        {
+          $limit: limit,
+        },
+        {
+          $project: {
+            __v: 0,
+          },
+        },
+      ],
 
-    pagination: [
-      {
-        $count: "totalProducts",
-      },
-    ],
-  },
-});
+      pagination: [
+        {
+          $count: "totalProducts",
+        },
+      ],
+    },
+  });
 
-const [result] = await productModel.aggregate(pipeline);
+  const [result] = await productModel.aggregate(pipeline);
 
-const products = result?.products ?? [];
+  const products = result?.products ?? [];
 
-const totalProducts =
-  result.pagination[0]?.totalProducts ?? 0;
+  const totalProducts =
+    result.pagination[0]?.totalProducts ?? 0;
 
-return {
-  products,
+  return {
+    products,
 
-  pagination: {
-    page,
-    limit,
-    totalProducts,
-    totalPages: Math.ceil(
-      totalProducts / limit
-    ),
-  },
+    pagination: {
+      page,
+      limit,
+      totalProducts,
+      totalPages: Math.ceil(
+        totalProducts / limit
+      ),
+    },
+  };
 };
-}
+
+export const getBuyerProductByIdService = async (
+  productId: string
+) => {
+  const product = await productModel
+    .findOne({
+      _id: productId,
+      status: ProductStatus.ACTIVE,
+    })
+    .select("-seller")
+    .lean();
+
+  if (!product) {
+    throw new ApiError(404, "Product not found.");
+  }
+
+  return product;
+};
