@@ -6,7 +6,7 @@ import { UserRole } from "../../../constants/user.js";
 import { validate } from "../../../middlewares/validate.js";
 import { changeProductStatusSchema, createProductSchema, productIdParamsSchema, updateProductSchema } from "../product.validation.js";
 import { changeProductStatusController, createProductController, getSellerProductByIdController, getSellerProductsController, updateProductController } from "../controllers/sellerProduct.controller.js";
-import { getSellerProductsQuerySchema } from "../getSellerProductsQuerySchema.js";
+import { getSellerProductsQuerySchema } from "../getProductsQuerySchema.js";
 import { validateQuery } from "../../../middlewares/validateQuery.middleware.js";
 import { validateParams } from "../../../middlewares/validateParams.middleware.js";
 

@@ -77,7 +77,7 @@ const validateUniqueInventorySizes = (
   inventory.forEach(({ size }, index) => {
     if (seenSizes.has(size)) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         path: ["inventory", index, "size"],
         message: `Duplicate size '${size}' is not allowed.`,
       });
@@ -126,6 +126,7 @@ export const productIdParamsSchema = z
     productId: objectIdSchema,
   })
   .strict();
+
 
 export type CreateProductInput = z.infer<typeof createProductSchema>;
 

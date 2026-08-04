@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { asyncHandler } from "../../../utils/AsyncHandler.js";
 import { changeProductStatusService, createProductService, getSellerProductByIdService, getSellerProductsService, updateProductService } from "../services/sellerProduct.service.js";
 import { ApiResponse } from "../../../utils/ApiResponse.js";
-import { GetSellerProductsQuery } from "../getSellerProductsQuerySchema.js";
+import { GetSellerProductsQuery } from "../getProductsQuerySchema.js";
 import { Types } from "mongoose";
 import { ProductIdParams } from "../product.validation.js";
 

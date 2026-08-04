@@ -6,7 +6,7 @@ import { ApiError } from "../../../utils/ApiError.js";
 import { deleteImages, uploadImages } from "../../../services/image.service.js";
 import { generateUniqueSlug } from "../../../utils/slug.js";
 import { productModel } from "../product.model.js";
-import { GetSellerProductsQuery } from "../getSellerProductsQuerySchema.js";
+import { GetSellerProductsQuery } from "../getProductsQuerySchema.js";
 import { IProduct } from "../product.interface.js";
 import { ProductSort, ProductStatus } from "../product.enums.js";
 import { logger } from "../../../config/logger.js";
@@ -178,7 +178,7 @@ export const getSellerProductByIdService = async (
   const product = await productModel.findOne({
     _id: productId,
     seller: seller._id,
-  });
+  }).lean();
 
   if (!product) {
     throw new ApiError(404, "Product not found.");

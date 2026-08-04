@@ -6,6 +6,7 @@ import cors from "cors";
 import helmet from "helmet";
 import sellerRouter from "./modules/seller/seller.routes.js";
 import sellerProductRouter from "./modules/products/routes/sellerProduct.routes.js";
+import buyerRouter from "./modules/products/routes/buyerProduct.routes.js";
 
 const app = express();
 
@@ -26,6 +27,7 @@ app.use(cookieParser())
 app.use("/api/v1/auth",authRouter);
 app.use("/api/v1/seller",sellerRouter);
 app.use("/api/v1/seller/products",sellerProductRouter)
+app.use("/api/v1/products",buyerRouter)
 
 
 app.use(errorMiddleware);
