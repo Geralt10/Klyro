@@ -22,6 +22,13 @@ export const getBuyerProductsService = async (
     sort,
   } = query;
 
+  // --- sanitize pagination inputs ---
+  const safePage = Math.max(Number(page) || 1, 1);
+  const safeLimit = Math.min(
+    Math.max(Number(limit) || 20, 1),
+    100 // hard cap to prevent abuse (e.g. ?limit=999999)
+  );
+
   const pipeline: PipelineStage[] = [];
 
   const match: QueryFilter<IProduct> = {
@@ -29,19 +36,10 @@ export const getBuyerProductsService = async (
   };
 
   if (search) {
+    const safeSearch = escapeRegex(search);
     match.$or = [
-      {
-        name: {
-          $regex: search,
-          $options: "i",
-        },
-      },
-      {
-        brand: {
-          $regex: search,
-          $options: "i",
-        },
-      },
+      { name: { $regex: safeSearch, $options: "i" } },
+      { brand: { $regex: safeSearch, $options: "i" } },
     ];
   }
 
@@ -55,14 +53,14 @@ export const getBuyerProductsService = async (
 
   if (brand) {
     match.brand = {
-      $regex: brand,
+      $regex: escapeRegex(brand),
       $options: "i",
     };
   }
 
   if (color) {
     match.color = {
-      $regex: color,
+      $regex: escapeRegex(color),
       $options: "i",
     };
   }
@@ -71,16 +69,12 @@ export const getBuyerProductsService = async (
     match.inventory = {
       $elemMatch: {
         size,
-        stock: {
-          $gt: 0,
-        },
+        stock: { $gt: 0 },
       },
     };
   }
 
-  pipeline.push({
-    $match: match,
-  });
+  pipeline.push({ $match: match });
 
   pipeline.push({
     $addFields: {
@@ -90,12 +84,7 @@ export const getBuyerProductsService = async (
           {
             $multiply: [
               "$basePrice",
-              {
-                $divide: [
-                  "$discountPercentage",
-                  100,
-                ],
-              },
+              { $divide: ["$discountPercentage", 100] },
             ],
           },
         ],
@@ -103,109 +92,68 @@ export const getBuyerProductsService = async (
     },
   });
 
-  if (
-    minPrice !== undefined ||
-    maxPrice !== undefined
-  ) {
-    const priceFilter: Record<
-      string,
-      number
-    > = {};
-
-    if (minPrice !== undefined) {
-      priceFilter.$gte = minPrice;
-    }
-
-    if (maxPrice !== undefined) {
-      priceFilter.$lte = maxPrice;
-    }
+  if (minPrice !== undefined || maxPrice !== undefined) {
+    const priceFilter: Record<string, number> = {};
+    if (minPrice !== undefined) priceFilter.$gte = minPrice;
+    if (maxPrice !== undefined) priceFilter.$lte = maxPrice;
 
     pipeline.push({
-      $match: {
-        finalPrice: priceFilter,
-      },
+      $match: { finalPrice: priceFilter },
     });
   }
 
-  const sortMap: Record<
-    ProductSort,
-    Record<string, 1 | -1>
-  > = {
-    [ProductSort.NEWEST]: {
-      createdAt: -1,
-    },
-
-    [ProductSort.OLDEST]: {
-      createdAt: 1,
-    },
-
-    [ProductSort.PRICE_ASC]: {
-      finalPrice: 1,
-    },
-
-    [ProductSort.PRICE_DESC]: {
-      finalPrice: -1,
-    },
-
-    [ProductSort.NAME_ASC]: {
-      name: 1,
-    },
-
-    [ProductSort.NAME_DESC]: {
-      name: -1,
-    },
+  const sortMap: Record<ProductSort, Record<string, 1 | -1>> = {
+    [ProductSort.NEWEST]: { createdAt: -1 },
+    [ProductSort.OLDEST]: { createdAt: 1 },
+    [ProductSort.PRICE_ASC]: { finalPrice: 1 },
+    [ProductSort.PRICE_DESC]: { finalPrice: -1 },
+    [ProductSort.NAME_ASC]: { name: 1 },
+    [ProductSort.NAME_DESC]: { name: -1 },
   };
 
+  // fallback to a sane default if sort is missing/invalid
   pipeline.push({
-    $sort: sortMap[sort],
+    $sort: sortMap[sort] ?? sortMap[ProductSort.NEWEST],
   });
 
-  const skip = (page - 1) * limit;
+  const skip = (safePage - 1) * safeLimit;
 
   pipeline.push({
     $facet: {
       products: [
-        {
-          $skip: skip,
-        },
-        {
-          $limit: limit,
-        },
-        {
-          $project: {
-            __v: 0,
-          },
-        },
+        { $skip: skip },
+        { $limit: safeLimit },
+        { $project: { __v: 0 } },
       ],
-
-      pagination: [
-        {
-          $count: "totalProducts",
-        },
-      ],
+      pagination: [{ $count: "totalProducts" }],
     },
   });
 
-  const [result] = await productModel.aggregate(pipeline);
+  let result;
+  try {
+    [result] = await productModel.aggregate(pipeline);
+  } catch (err) {
+    // let caller/error middleware handle logging + response shape
+    throw new Error("Failed to fetch products");
+  }
 
   const products = result?.products ?? [];
-
-  const totalProducts =
-    result.pagination[0]?.totalProducts ?? 0;
+  const totalProducts = result?.pagination?.[0]?.totalProducts ?? 0;
 
   return {
     products,
-
     pagination: {
-      page,
-      limit,
+      page: safePage,
+      limit: safeLimit,
       totalProducts,
-      totalPages: Math.ceil(
-        totalProducts / limit
-      ),
+      totalPages: Math.ceil(totalProducts / safeLimit),
     },
   };
 };
+
+// --- helper: escape special regex characters in user input ---
+const escapeRegex = (str: string): string =>
+  str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 export const getBuyerProductByIdService = async (
   productId: string
