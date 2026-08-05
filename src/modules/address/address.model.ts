@@ -118,6 +118,12 @@ addressSchema.index(
   }
 );
 
+addressSchema.index({
+  user: 1,
+  isDefault: -1,
+  createdAt: -1,
+});
+
 export const addressModel = model<IAddress>(
   "Address",
   addressSchema

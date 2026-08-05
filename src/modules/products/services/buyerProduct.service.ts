@@ -4,6 +4,7 @@ import { IProduct } from "../product.interface.js";
 import { ProductSort, ProductStatus } from "../product.enums.js";
 import { productModel } from "../product.model.js";
 import { ApiError } from "../../../utils/ApiError.js";
+import { escapeRegex } from "../../../utils/escapeRegex.js";
 
 export const getBuyerProductsService = async (
   query: GetProductsQuery
@@ -129,13 +130,7 @@ export const getBuyerProductsService = async (
     },
   });
 
-  let result;
-  try {
-    [result] = await productModel.aggregate(pipeline);
-  } catch (err) {
-    // let caller/error middleware handle logging + response shape
-    throw new Error("Failed to fetch products");
-  }
+  const [result] = await productModel.aggregate(pipeline);
 
   const products = result?.products ?? [];
   const totalProducts = result?.pagination?.[0]?.totalProducts ?? 0;
@@ -150,10 +145,6 @@ export const getBuyerProductsService = async (
     },
   };
 };
-
-// --- helper: escape special regex characters in user input ---
-const escapeRegex = (str: string): string =>
-  str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 export const getBuyerProductByIdService = async (
   productId: string

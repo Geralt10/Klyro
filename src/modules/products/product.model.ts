@@ -105,6 +105,19 @@ discountPercentage: {
   max: 99,
 },
 
+averageRating: {
+  type: Number,
+  default: 0,
+  min: 0,
+  max: 5,
+},
+
+totalReviews: {
+  type: Number,
+  default: 0,
+  min: 0,
+},
+
 inventory: {
   type: [ProductInventorySchema],
   required: true,
@@ -146,6 +159,10 @@ ProductSchema.index(
     unique: true,
   }
 );
+
+ProductSchema.index({ seller: 1, status: 1, createdAt: -1 });
+ProductSchema.index({ status: 1, createdAt: -1 });
+ProductSchema.index({ seller: 1, "inventory.stock": 1 });
 
 ProductSchema.virtual("finalPrice").get(function () {
   return (

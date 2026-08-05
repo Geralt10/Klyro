@@ -8,6 +8,7 @@ import {
   ProductSort,
 } from "../product.enums.js";
 import { productModel } from "../product.model.js";
+import { escapeRegex } from "../../../utils/escapeRegex.js";
 
 export const getAdminProductsService = async (
   query: GetAdminProductsQuery
@@ -26,7 +27,7 @@ export const getAdminProductsService = async (
 
   if (search) {
     filter.name = {
-      $regex: search,
+      $regex: escapeRegex(search),
       $options: "i",
     };
   }

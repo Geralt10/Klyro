@@ -1,0 +1,650 @@
+openapi: 3.0.3
+info:
+  title: Klyro API
+  version: 1.0.0
+  description: |
+    REST API for Klyro. Successful application responses use the `ApiResponse`
+    envelope and handled failures use `ApiError`. Browser clients authenticate
+    with HTTP-only cookies; the bearer scheme is included for API tooling.
+servers:
+  - url: http://localhost:3000/api/v1
+    description: Local development
+tags:
+  - name: Authentication
+  - name: Seller
+  - name: Products
+  - name: Cart
+  - name: Addresses
+  - name: Payments
+  - name: Orders
+  - name: Seller OMS
+  - name: Reviews
+  - name: Seller Dashboard
+paths:
+  /auth/register:
+    post:
+      tags: [Authentication]
+      summary: Register an account
+      description: Creates an unverified password-based account and sends an email-verification token.
+      requestBody: { $ref: '#/components/requestBodies/Register' }
+      responses: { '201': { $ref: '#/components/responses/UserCreated' }, '400': { $ref: '#/components/responses/BadRequest' }, '409': { $ref: '#/components/responses/Conflict' } }
+  /auth/login:
+    post:
+      tags: [Authentication]
+      summary: Sign in with email and password
+      description: Sets `accessToken` and `refreshToken` HTTP-only cookies on success.
+      requestBody: { $ref: '#/components/requestBodies/Login' }
+      responses: { '200': { $ref: '#/components/responses/UserSuccess' }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' }, '409': { $ref: '#/components/responses/Conflict' } }
+  /auth/google:
+    post:
+      tags: [Authentication]
+      summary: Sign in with Google authorization code
+      description: Exchanges a Google authorization code and sets authentication cookies.
+      requestBody: { $ref: '#/components/requestBodies/GoogleLogin' }
+      responses: { '200': { $ref: '#/components/responses/UserSuccess' }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' }, '409': { $ref: '#/components/responses/Conflict' } }
+  /auth/refresh:
+    post:
+      tags: [Authentication]
+      summary: Rotate refresh token
+      description: Reads the refresh-token cookie, rotates it, and sets new authentication cookies.
+      responses: { '200': { $ref: '#/components/responses/EmptySuccess' }, '401': { $ref: '#/components/responses/Unauthorized' } }
+  /auth/logout:
+    post:
+      tags: [Authentication]
+      summary: Sign out
+      description: Invalidates the current refresh session and clears authentication cookies.
+      responses: { '200': { $ref: '#/components/responses/EmptySuccess' }, '401': { $ref: '#/components/responses/Unauthorized' } }
+  /auth/me:
+    get:
+      tags: [Authentication]
+      summary: Get current user
+      description: Returns the authenticated user profile.
+      security: [{ bearerAuth: [] }]
+      responses: { '200': { $ref: '#/components/responses/UserSuccess' }, '401': { $ref: '#/components/responses/Unauthorized' }, '404': { $ref: '#/components/responses/NotFound' } }
+  /auth/verify-email:
+    get:
+      tags: [Authentication]
+      summary: Verify email address
+      description: Verifies an account using the token supplied by email.
+      parameters: [{ $ref: '#/components/parameters/TokenQuery' }]
+      responses: { '200': { $ref: '#/components/responses/EmptySuccess' }, '400': { $ref: '#/components/responses/BadRequest' } }
+  /auth/resend-verification:
+    post:
+      tags: [Authentication]
+      summary: Resend verification email
+      requestBody: { $ref: '#/components/requestBodies/Email' }
+      responses: { '200': { $ref: '#/components/responses/EmptySuccess' }, '404': { $ref: '#/components/responses/NotFound' }, '400': { $ref: '#/components/responses/BadRequest' } }
+  /auth/forgot-password:
+    post:
+      tags: [Authentication]
+      summary: Request password reset
+      description: Always returns a generic success response to avoid account enumeration.
+      requestBody: { $ref: '#/components/requestBodies/Email' }
+      responses: { '200': { $ref: '#/components/responses/EmptySuccess' }, '400': { $ref: '#/components/responses/BadRequest' } }
+  /auth/reset-password:
+    post:
+      tags: [Authentication]
+      summary: Reset password
+      requestBody: { $ref: '#/components/requestBodies/ResetPassword' }
+      responses: { '200': { $ref: '#/components/responses/EmptySuccess' }, '400': { $ref: '#/components/responses/BadRequest' }, '403': { $ref: '#/components/responses/Forbidden' } }
+  /auth/change-password:
+    patch:
+      tags: [Authentication]
+      summary: Change password
+      security: [{ bearerAuth: [] }]
+      requestBody: { $ref: '#/components/requestBodies/ChangePassword' }
+      responses: { '200': { $ref: '#/components/responses/EmptySuccess' }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden' } }
+  /seller:
+    post:
+      tags: [Seller]
+      summary: Create seller profile
+      description: Creates a seller profile and promotes the authenticated account to seller.
+      security: [{ bearerAuth: [] }]
+      requestBody: { $ref: '#/components/requestBodies/SellerCreate' }
+      responses: { '201': { $ref: '#/components/responses/SellerCreated' }, '401': { $ref: '#/components/responses/Unauthorized' }, '409': { $ref: '#/components/responses/Conflict' } }
+    get:
+      tags: [Seller]
+      summary: Get seller profile
+      security: [{ bearerAuth: [] }]
+      responses: { '200': { $ref: '#/components/responses/SellerSuccess' }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden' } }
+    patch:
+      tags: [Seller]
+      summary: Update seller profile
+      security: [{ bearerAuth: [] }]
+      requestBody: { $ref: '#/components/requestBodies/SellerUpdate' }
+      responses: { '200': { $ref: '#/components/responses/SellerSuccess' }, '400': { $ref: '#/components/responses/BadRequest' }, '403': { $ref: '#/components/responses/Forbidden' }, '409': { $ref: '#/components/responses/Conflict' } }
+  /seller/logo:
+    patch:
+      tags: [Seller]
+      summary: Update seller logo
+      security: [{ bearerAuth: [] }]
+      requestBody: { $ref: '#/components/requestBodies/LogoUpload' }
+      responses: { '200': { $ref: '#/components/responses/SellerSuccess' }, '400': { $ref: '#/components/responses/BadRequest' }, '403': { $ref: '#/components/responses/Forbidden' } }
+  /seller/banner:
+    patch:
+      tags: [Seller]
+      summary: Update seller banner
+      security: [{ bearerAuth: [] }]
+      requestBody: { $ref: '#/components/requestBodies/BannerUpload' }
+      responses: { '200': { $ref: '#/components/responses/SellerSuccess' }, '400': { $ref: '#/components/responses/BadRequest' }, '403': { $ref: '#/components/responses/Forbidden' } }
+  /seller/dashboard:
+    get:
+      tags: [Seller Dashboard]
+      summary: Get seller dashboard
+      description: Returns seller-scoped product, order, delivered-revenue, and inventory reporting in one response.
+      security: [{ bearerAuth: [] }]
+      responses: { '200': { $ref: '#/components/responses/DashboardSuccess' }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden' }, '404': { $ref: '#/components/responses/NotFound' } }
+  /products:
+    get:
+      tags: [Products]
+      summary: List active products
+      description: Public catalog listing. Supports filtering, sorting, price range, and pagination.
+      parameters: [{ $ref: '#/components/parameters/Page' }, { $ref: '#/components/parameters/Limit100' }, { $ref: '#/components/parameters/Search' }, { $ref: '#/components/parameters/Category' }, { $ref: '#/components/parameters/Gender' }, { $ref: '#/components/parameters/Brand' }, { $ref: '#/components/parameters/Color' }, { $ref: '#/components/parameters/Size' }, { $ref: '#/components/parameters/MinPrice' }, { $ref: '#/components/parameters/MaxPrice' }, { $ref: '#/components/parameters/ProductSort' }]
+      responses: { '200': { $ref: '#/components/responses/ProductListSuccess' }, '400': { $ref: '#/components/responses/BadRequest' } }
+  /products/{productId}:
+    get:
+      tags: [Products]
+      summary: Get active product
+      parameters: [{ $ref: '#/components/parameters/ProductId' }]
+      responses: { '200': { $ref: '#/components/responses/ProductSuccess' }, '400': { $ref: '#/components/responses/BadRequest' }, '404': { $ref: '#/components/responses/NotFound' } }
+  /seller/products:
+    post:
+      tags: [Products]
+      summary: Create product
+      description: Seller-only multipart request. `inventory` is a JSON array string and at least three image files are required.
+      security: [{ bearerAuth: [] }]
+      requestBody: { $ref: '#/components/requestBodies/ProductCreate' }
+      responses: { '201': { $ref: '#/components/responses/ProductCreated' }, '400': { $ref: '#/components/responses/BadRequest' }, '403': { $ref: '#/components/responses/Forbidden' }, '409': { $ref: '#/components/responses/Conflict' } }
+    get:
+      tags: [Products]
+      summary: List seller products
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/Page' }, { $ref: '#/components/parameters/Limit50' }, { $ref: '#/components/parameters/Search' }, { $ref: '#/components/parameters/Category' }, { $ref: '#/components/parameters/ProductStatus' }, { $ref: '#/components/parameters/ProductSort' }]
+      responses: { '200': { $ref: '#/components/responses/ProductListSuccess' }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden' } }
+  /seller/products/{productId}:
+    get:
+      tags: [Products]
+      summary: Get seller product
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/ProductId' }]
+      responses: { '200': { $ref: '#/components/responses/ProductSuccess' }, '403': { $ref: '#/components/responses/Forbidden' }, '404': { $ref: '#/components/responses/NotFound' } }
+    patch:
+      tags: [Products]
+      summary: Update seller product
+      description: Seller-only multipart request. Existing image file IDs may be supplied as a JSON array in `deletedImageIds`.
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/ProductId' }]
+      requestBody: { $ref: '#/components/requestBodies/ProductUpdate' }
+      responses: { '200': { $ref: '#/components/responses/ProductSuccess' }, '400': { $ref: '#/components/responses/BadRequest' }, '403': { $ref: '#/components/responses/Forbidden' }, '404': { $ref: '#/components/responses/NotFound' } }
+  /seller/products/{productId}/status:
+    patch:
+      tags: [Products]
+      summary: Change product status
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/ProductId' }]
+      requestBody: { $ref: '#/components/requestBodies/ProductStatus' }
+      responses: { '200': { $ref: '#/components/responses/ProductSuccess' }, '400': { $ref: '#/components/responses/BadRequest' }, '403': { $ref: '#/components/responses/Forbidden' }, '404': { $ref: '#/components/responses/NotFound' } }
+  /admin/products:
+    get:
+      tags: [Products]
+      summary: List products as administrator
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/Page' }, { $ref: '#/components/parameters/Limit50' }, { $ref: '#/components/parameters/Search' }, { $ref: '#/components/parameters/Category' }, { $ref: '#/components/parameters/ProductStatus' }, { $ref: '#/components/parameters/SellerId' }, { $ref: '#/components/parameters/ProductSort' }]
+      responses: { '200': { $ref: '#/components/responses/ProductListSuccess' }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden' } }
+  /admin/products/{productId}:
+    get:
+      tags: [Products]
+      summary: Get product as administrator
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/ProductId' }]
+      responses: { '200': { $ref: '#/components/responses/ProductSuccess' }, '403': { $ref: '#/components/responses/Forbidden' }, '404': { $ref: '#/components/responses/NotFound' } }
+  /cart:
+    get:
+      tags: [Cart]
+      summary: Get current cart
+      security: [{ bearerAuth: [] }]
+      responses: { '200': { $ref: '#/components/responses/CartSuccess' }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden' } }
+    delete:
+      tags: [Cart]
+      summary: Clear current cart
+      security: [{ bearerAuth: [] }]
+      responses: { '200': { $ref: '#/components/responses/CartSuccess' }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden' } }
+  /cart/items:
+    post:
+      tags: [Cart]
+      summary: Add item to cart
+      security: [{ bearerAuth: [] }]
+      requestBody: { $ref: '#/components/requestBodies/CartItem' }
+      responses: { '200': { $ref: '#/components/responses/CartSuccess' }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden' }, '404': { $ref: '#/components/responses/NotFound' } }
+  /cart/items/{cartItemId}:
+    patch:
+      tags: [Cart]
+      summary: Update cart item quantity
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/CartItemId' }]
+      requestBody: { $ref: '#/components/requestBodies/CartQuantity' }
+      responses: { '200': { $ref: '#/components/responses/CartSuccess' }, '400': { $ref: '#/components/responses/BadRequest' }, '404': { $ref: '#/components/responses/NotFound' } }
+    delete:
+      tags: [Cart]
+      summary: Remove cart item
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/CartItemId' }]
+      responses: { '200': { $ref: '#/components/responses/CartSuccess' }, '404': { $ref: '#/components/responses/NotFound' } }
+  /addresses:
+    post:
+      tags: [Addresses]
+      summary: Create address
+      security: [{ bearerAuth: [] }]
+      requestBody: { $ref: '#/components/requestBodies/AddressCreate' }
+      responses: { '201': { $ref: '#/components/responses/AddressCreated' }, '400': { $ref: '#/components/responses/BadRequest' }, '403': { $ref: '#/components/responses/Forbidden' } }
+    get:
+      tags: [Addresses]
+      summary: List saved addresses
+      security: [{ bearerAuth: [] }]
+      responses: { '200': { $ref: '#/components/responses/AddressListSuccess' }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden' } }
+  /addresses/default:
+    get:
+      tags: [Addresses]
+      summary: Get default address
+      security: [{ bearerAuth: [] }]
+      responses: { '200': { $ref: '#/components/responses/AddressSuccess' }, '404': { $ref: '#/components/responses/NotFound' } }
+  /addresses/{addressId}:
+    get:
+      tags: [Addresses]
+      summary: Get address
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/AddressId' }]
+      responses: { '200': { $ref: '#/components/responses/AddressSuccess' }, '400': { $ref: '#/components/responses/BadRequest' }, '404': { $ref: '#/components/responses/NotFound' } }
+    patch:
+      tags: [Addresses]
+      summary: Update address
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/AddressId' }]
+      requestBody: { $ref: '#/components/requestBodies/AddressUpdate' }
+      responses: { '200': { $ref: '#/components/responses/AddressSuccess' }, '400': { $ref: '#/components/responses/BadRequest' }, '404': { $ref: '#/components/responses/NotFound' } }
+    delete:
+      tags: [Addresses]
+      summary: Delete address
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/AddressId' }]
+      responses: { '200': { $ref: '#/components/responses/AddressSuccess' }, '404': { $ref: '#/components/responses/NotFound' } }
+  /addresses/{addressId}/default:
+    patch:
+      tags: [Addresses]
+      summary: Set default address
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/AddressId' }]
+      responses: { '200': { $ref: '#/components/responses/AddressSuccess' }, '404': { $ref: '#/components/responses/NotFound' } }
+  /payments/checkout:
+    post:
+      tags: [Payments]
+      summary: Start checkout
+      description: Creates a COD payment or a Razorpay order from the current cart snapshot.
+      security: [{ bearerAuth: [] }]
+      requestBody: { $ref: '#/components/requestBodies/Checkout' }
+      responses: { '201': { $ref: '#/components/responses/PaymentCreated' }, '400': { $ref: '#/components/responses/BadRequest' }, '404': { $ref: '#/components/responses/NotFound' } }
+  /payments/verify:
+    post:
+      tags: [Payments]
+      summary: Verify Razorpay payment
+      description: Validates the supplied Razorpay signature and captured payment details.
+      security: [{ bearerAuth: [] }]
+      requestBody: { $ref: '#/components/requestBodies/PaymentVerification' }
+      responses: { '200': { $ref: '#/components/responses/PaymentSuccess' }, '400': { $ref: '#/components/responses/BadRequest' }, '404': { $ref: '#/components/responses/NotFound' }, '409': { $ref: '#/components/responses/Conflict' } }
+  /payments:
+    get:
+      tags: [Payments]
+      summary: List payments
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/Page' }, { $ref: '#/components/parameters/Limit50' }]
+      responses: { '200': { $ref: '#/components/responses/PaymentListSuccess' }, '401': { $ref: '#/components/responses/Unauthorized' } }
+  /payments/{paymentId}:
+    get:
+      tags: [Payments]
+      summary: Get payment
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/PaymentId' }]
+      responses: { '200': { $ref: '#/components/responses/PaymentSuccess' }, '400': { $ref: '#/components/responses/BadRequest' }, '404': { $ref: '#/components/responses/NotFound' } }
+  /orders:
+    post:
+      tags: [Orders]
+      summary: Create order from successful payment
+      description: Creates the order, deducts inventory, and clears the cart transactionally.
+      security: [{ bearerAuth: [] }]
+      requestBody: { $ref: '#/components/requestBodies/CreateOrder' }
+      responses: { '201': { $ref: '#/components/responses/OrderCreated' }, '400': { $ref: '#/components/responses/BadRequest' }, '404': { $ref: '#/components/responses/NotFound' }, '409': { $ref: '#/components/responses/Conflict' } }
+    get:
+      tags: [Orders]
+      summary: List customer orders
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/Page' }, { $ref: '#/components/parameters/Limit50' }]
+      responses: { '200': { $ref: '#/components/responses/OrderListSuccess' }, '401': { $ref: '#/components/responses/Unauthorized' } }
+  /orders/seller:
+    get:
+      tags: [Orders]
+      summary: List seller-facing orders
+      description: Returns orders containing the authenticated seller's products.
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/Page' }, { $ref: '#/components/parameters/Limit50' }]
+      responses: { '200': { $ref: '#/components/responses/OrderListSuccess' }, '403': { $ref: '#/components/responses/Forbidden' } }
+  /orders/{orderId}:
+    get:
+      tags: [Orders]
+      summary: Get customer order
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/OrderId' }]
+      responses: { '200': { $ref: '#/components/responses/OrderSuccess' }, '400': { $ref: '#/components/responses/BadRequest' }, '404': { $ref: '#/components/responses/NotFound' } }
+  /orders/{orderId}/cancel:
+    patch:
+      tags: [Orders]
+      summary: Cancel customer order
+      description: Cancels only confirmed or processing orders and restores inventory. Razorpay orders are refunded.
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/OrderId' }]
+      responses: { '200': { $ref: '#/components/responses/OrderSuccess' }, '400': { $ref: '#/components/responses/BadRequest' }, '404': { $ref: '#/components/responses/NotFound' } }
+  /seller/orders:
+    get:
+      tags: [Seller OMS]
+      summary: List managed seller orders
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/Page' }, { $ref: '#/components/parameters/Limit50' }, { $ref: '#/components/parameters/OrderStatus' }]
+      responses: { '200': { $ref: '#/components/responses/OrderListSuccess' }, '403': { $ref: '#/components/responses/Forbidden' } }
+  /seller/orders/{orderNumber}:
+    get:
+      tags: [Seller OMS]
+      summary: Get managed seller order
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/OrderNumber' }]
+      responses: { '200': { $ref: '#/components/responses/OrderSuccess' }, '400': { $ref: '#/components/responses/BadRequest' }, '404': { $ref: '#/components/responses/NotFound' } }
+  /seller/orders/{orderNumber}/status:
+    patch:
+      tags: [Seller OMS]
+      summary: Advance seller order status
+      description: Valid transitions are confirmed→processing→dispatched→delivered.
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/OrderNumber' }]
+      requestBody: { $ref: '#/components/requestBodies/OrderStatus' }
+      responses: { '200': { $ref: '#/components/responses/OrderSuccess' }, '400': { $ref: '#/components/responses/BadRequest' }, '404': { $ref: '#/components/responses/NotFound' } }
+  /reviews:
+    post:
+      tags: [Reviews]
+      summary: Create review
+      description: Buyers can review a product in a delivered order once.
+      security: [{ bearerAuth: [] }]
+      requestBody: { $ref: '#/components/requestBodies/ReviewCreate' }
+      responses: { '201': { $ref: '#/components/responses/ReviewCreated' }, '400': { $ref: '#/components/responses/BadRequest' }, '404': { $ref: '#/components/responses/NotFound' }, '409': { $ref: '#/components/responses/Conflict' } }
+  /reviews/me:
+    get:
+      tags: [Reviews]
+      summary: List current user's reviews
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/Page' }, { $ref: '#/components/parameters/Limit50' }]
+      responses: { '200': { $ref: '#/components/responses/ReviewListSuccess' }, '401': { $ref: '#/components/responses/Unauthorized' } }
+  /reviews/{reviewId}:
+    patch:
+      tags: [Reviews]
+      summary: Update review
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/ReviewId' }]
+      requestBody: { $ref: '#/components/requestBodies/ReviewUpdate' }
+      responses: { '200': { $ref: '#/components/responses/ReviewSuccess' }, '400': { $ref: '#/components/responses/BadRequest' }, '404': { $ref: '#/components/responses/NotFound' } }
+    delete:
+      tags: [Reviews]
+      summary: Delete review
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/ReviewId' }]
+      responses: { '200': { $ref: '#/components/responses/ReviewSuccess' }, '404': { $ref: '#/components/responses/NotFound' } }
+  /products/{productId}/reviews:
+    get:
+      tags: [Reviews]
+      summary: List product reviews
+      description: Requires authentication in the current API implementation.
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/ProductId' }, { $ref: '#/components/parameters/Page' }, { $ref: '#/components/parameters/Limit50' }]
+      responses: { '200': { $ref: '#/components/responses/ReviewListSuccess' }, '401': { $ref: '#/components/responses/Unauthorized' }, '404': { $ref: '#/components/responses/NotFound' } }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Supply an access JWT for tooling clients. Browser clients use the HTTP-only `accessToken` cookie.
+  parameters:
+    ProductId: { name: productId, in: path, required: true, schema: { $ref: '#/components/schemas/ObjectId' }, example: '65e5b2b4a4ef6f6c3b2e0001' }
+    SellerId: { name: sellerId, in: query, schema: { $ref: '#/components/schemas/ObjectId' } }
+    CartItemId: { name: cartItemId, in: path, required: true, schema: { $ref: '#/components/schemas/ObjectId' } }
+    AddressId: { name: addressId, in: path, required: true, schema: { $ref: '#/components/schemas/ObjectId' } }
+    PaymentId: { name: paymentId, in: path, required: true, schema: { $ref: '#/components/schemas/ObjectId' } }
+    ReviewId: { name: reviewId, in: path, required: true, schema: { $ref: '#/components/schemas/ObjectId' } }
+    OrderId: { name: orderId, in: path, required: true, description: Klyro order number, schema: { type: string, pattern: '^ORD-\\d{8}-[A-Z0-9]{6}$' }, example: ORD-20260805-ABC123 }
+    OrderNumber: { name: orderNumber, in: path, required: true, schema: { type: string, pattern: '^ORD-\\d{8}-[A-Z0-9]{6}$' }, example: ORD-20260805-ABC123 }
+    TokenQuery: { name: token, in: query, required: true, schema: { type: string }, example: verification-token }
+    Page: { name: page, in: query, schema: { type: integer, minimum: 1, default: 1 }, description: One-based page number. }
+    Limit50: { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 50, default: 10 } }
+    Limit100: { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 10 } }
+    Search: { name: search, in: query, schema: { type: string }, example: cotton }
+    Category: { name: category, in: query, schema: { $ref: '#/components/schemas/ProductCategory' } }
+    Gender: { name: gender, in: query, schema: { $ref: '#/components/schemas/ProductGender' } }
+    Brand: { name: brand, in: query, schema: { type: string }, example: Klyro }
+    Color: { name: color, in: query, schema: { type: string }, example: black }
+    Size: { name: size, in: query, schema: { $ref: '#/components/schemas/ProductSize' } }
+    MinPrice: { name: minPrice, in: query, schema: { type: number, minimum: 0 }, example: 499 }
+    MaxPrice: { name: maxPrice, in: query, schema: { type: number, minimum: 0 }, example: 1999 }
+    ProductStatus: { name: status, in: query, schema: { $ref: '#/components/schemas/ProductStatus' } }
+    OrderStatus: { name: status, in: query, schema: { $ref: '#/components/schemas/OrderStatus' } }
+    ProductSort: { name: sort, in: query, schema: { type: string, enum: [newest, oldest, price_asc, price_desc, name_asc, name_desc], default: newest } }
+  requestBodies:
+    Register:
+      required: true
+      content: { application/json: { schema: { $ref: '#/components/schemas/RegisterRequest' }, example: { name: Ada Lovelace, email: ada@example.com, password: 'StrongPass1!' } } }
+    Login:
+      required: true
+      content: { application/json: { schema: { $ref: '#/components/schemas/LoginRequest' }, example: { email: ada@example.com, password: 'StrongPass1!' } } }
+    GoogleLogin:
+      required: true
+      content: { application/json: { schema: { type: object, required: [code], properties: { code: { type: string } } }, example: { code: google-authorization-code } } }
+    Email:
+      required: true
+      content: { application/json: { schema: { type: object, required: [email], properties: { email: { type: string, format: email } } }, example: { email: ada@example.com } } }
+    ResetPassword:
+      required: true
+      content: { application/json: { schema: { type: object, required: [token, password], properties: { token: { type: string }, password: { $ref: '#/components/schemas/Password' } } }, example: { token: reset-token, password: 'NewStrongPass1!' } } }
+    ChangePassword:
+      required: true
+      content: { application/json: { schema: { type: object, required: [currentPassword, newPassword], properties: { currentPassword: { $ref: '#/components/schemas/Password' }, newPassword: { $ref: '#/components/schemas/Password' } } }, example: { currentPassword: 'StrongPass1!', newPassword: 'NewStrongPass1!' } } }
+    SellerCreate:
+      required: true
+      content: { application/json: { schema: { $ref: '#/components/schemas/SellerInput' }, example: { storeName: ada-store, businessName: Ada Fashion Pvt Ltd, description: Modern everyday apparel, businessAddress: { addressLine1: '42 Market Road', city: Bengaluru, state: Karnataka, country: India, postalCode: '560001' } } } }
+    SellerUpdate:
+      required: true
+      content: { application/json: { schema: { allOf: [{ $ref: '#/components/schemas/SellerInput' }], minProperties: 1 }, example: { description: Updated store description } } }
+    LogoUpload:
+      required: true
+      content: { multipart/form-data: { schema: { type: object, required: [logo], properties: { logo: { type: string, format: binary } } } } }
+    BannerUpload:
+      required: true
+      content: { multipart/form-data: { schema: { type: object, required: [banner], properties: { banner: { type: string, format: binary } } } } }
+    ProductCreate:
+      required: true
+      content: { multipart/form-data: { schema: { $ref: '#/components/schemas/ProductMultipartInput' }, encoding: { inventory: { contentType: application/json } } } }
+    ProductUpdate:
+      required: true
+      content: { multipart/form-data: { schema: { allOf: [{ $ref: '#/components/schemas/ProductMultipartInput' }], properties: { deletedImageIds: { type: string, example: '["image-file-id"]' } } } } }
+    ProductStatus:
+      required: true
+      content: { application/json: { schema: { type: object, required: [status], properties: { status: { $ref: '#/components/schemas/ProductStatus' } } }, example: { status: active } } }
+    CartItem:
+      required: true
+      content: { application/json: { schema: { type: object, required: [productId, size, quantity], properties: { productId: { $ref: '#/components/schemas/ObjectId' }, size: { $ref: '#/components/schemas/ProductSize' }, quantity: { type: integer, minimum: 1 } } }, example: { productId: '65e5b2b4a4ef6f6c3b2e0001', size: m, quantity: 2 } } }
+    CartQuantity:
+      required: true
+      content: { application/json: { schema: { type: object, required: [quantity], properties: { quantity: { type: integer, minimum: 1 } } }, example: { quantity: 3 } } }
+    AddressCreate:
+      required: true
+      content: { application/json: { schema: { $ref: '#/components/schemas/AddressInput' }, example: { fullName: Ada Lovelace, phone: '9876543210', addressLine1: '42 Market Road', city: Bengaluru, state: Karnataka, postalCode: '560001', addressType: HOME } } }
+    AddressUpdate:
+      required: true
+      content: { application/json: { schema: { allOf: [{ $ref: '#/components/schemas/AddressInput' }], minProperties: 1 }, example: { landmark: Near Central Mall } } }
+    Checkout:
+      required: true
+      content: { application/json: { schema: { type: object, required: [addressId, paymentMethod], properties: { addressId: { $ref: '#/components/schemas/ObjectId' }, paymentMethod: { $ref: '#/components/schemas/PaymentMethod' } } }, example: { addressId: '65e5b2b4a4ef6f6c3b2e0002', paymentMethod: RAZORPAY } } }
+    PaymentVerification:
+      required: true
+      content: { application/json: { schema: { type: object, required: [paymentId, razorpayOrderId, razorpayPaymentId, razorpaySignature], properties: { paymentId: { $ref: '#/components/schemas/ObjectId' }, razorpayOrderId: { type: string }, razorpayPaymentId: { type: string }, razorpaySignature: { type: string } } }, example: { paymentId: '65e5b2b4a4ef6f6c3b2e0003', razorpayOrderId: order_abc, razorpayPaymentId: pay_abc, razorpaySignature: signature } } }
+    CreateOrder:
+      required: true
+      content: { application/json: { schema: { type: object, required: [paymentId], properties: { paymentId: { $ref: '#/components/schemas/ObjectId' } } }, example: { paymentId: '65e5b2b4a4ef6f6c3b2e0003' } } }
+    OrderStatus:
+      required: true
+      content: { application/json: { schema: { type: object, required: [status], properties: { status: { $ref: '#/components/schemas/OrderStatus' } } }, example: { status: PROCESSING } } }
+    ReviewCreate:
+      required: true
+      content: { application/json: { schema: { $ref: '#/components/schemas/ReviewInput' }, example: { productId: '65e5b2b4a4ef6f6c3b2e0001', orderId: '65e5b2b4a4ef6f6c3b2e0004', rating: 5, comment: Excellent quality and fit. } } }
+    ReviewUpdate:
+      required: true
+      content: { application/json: { schema: { type: object, minProperties: 1, properties: { rating: { type: integer, minimum: 1, maximum: 5 }, comment: { type: string, minLength: 5, maxLength: 1000 } } }, example: { rating: 4, comment: Good quality after several washes. } } }
+  responses:
+    EmptySuccess:
+      description: Request completed successfully.
+      content: { application/json: { schema: { $ref: '#/components/schemas/ApiResponse' }, example: { statusCode: 200, message: Request completed successfully., data: null } } }
+    UserCreated:
+      description: Account created.
+      content: { application/json: { schema: { $ref: '#/components/schemas/ApiResponseUser' }, example: { statusCode: 201, message: 'Registration successful. Please verify your email.', data: { _id: '65e5b2b4a4ef6f6c3b2e0000', name: Ada Lovelace, email: ada@example.com, role: BUYER, isVerified: false } } } }
+    UserSuccess:
+      description: User returned and, for sign-in endpoints, authentication cookies set.
+      content: { application/json: { schema: { $ref: '#/components/schemas/ApiResponseUser' }, example: { statusCode: 200, message: Login successful, data: { _id: '65e5b2b4a4ef6f6c3b2e0000', name: Ada Lovelace, email: ada@example.com, role: BUYER, isVerified: true } } } }
+    SellerCreated:
+      description: Seller profile created.
+      content: { application/json: { schema: { $ref: '#/components/schemas/ApiResponseSeller' }, example: { statusCode: 201, message: Seller profile created successfully., data: { storeName: ada-store, businessName: Ada Fashion Pvt Ltd, isActive: true } } } }
+    SellerSuccess:
+      description: Seller profile returned.
+      content: { application/json: { schema: { $ref: '#/components/schemas/ApiResponseSeller' }, example: { statusCode: 200, message: Seller profile fetched successfully., data: { storeName: ada-store, businessName: Ada Fashion Pvt Ltd, isActive: true } } } }
+    ProductCreated:
+      description: Product created.
+      content: { application/json: { schema: { $ref: '#/components/schemas/ApiResponseProduct' }, example: { statusCode: 201, message: Product created successfully., data: { _id: '65e5b2b4a4ef6f6c3b2e0001', name: Classic Cotton Tee, status: draft } } } }
+    ProductSuccess:
+      description: Product returned.
+      content: { application/json: { schema: { $ref: '#/components/schemas/ApiResponseProduct' }, example: { statusCode: 200, message: Product fetched successfully., data: { _id: '65e5b2b4a4ef6f6c3b2e0001', name: Classic Cotton Tee, status: active, finalPrice: 899 } } } }
+    ProductListSuccess:
+      description: Product page returned.
+      content: { application/json: { schema: { $ref: '#/components/schemas/ApiResponseProductList' }, example: { statusCode: 200, message: Products fetched successfully., data: { products: [], pagination: { page: 1, limit: 10, totalProducts: 0, totalPages: 0 } } } } }
+    CartSuccess:
+      description: Cart returned.
+      content: { application/json: { schema: { $ref: '#/components/schemas/ApiResponseCart' }, example: { statusCode: 200, message: Cart fetched successfully., data: { items: [], totalItems: 0 } } } }
+    AddressCreated:
+      description: Address created.
+      content: { application/json: { schema: { $ref: '#/components/schemas/ApiResponseAddress' }, example: { statusCode: 201, message: Address created successfully., data: { fullName: Ada Lovelace, city: Bengaluru, isDefault: true } } } }
+    AddressSuccess:
+      description: Address returned.
+      content: { application/json: { schema: { $ref: '#/components/schemas/ApiResponseAddress' }, example: { statusCode: 200, message: Address fetched successfully., data: { fullName: Ada Lovelace, city: Bengaluru, isDefault: true } } } }
+    AddressListSuccess:
+      description: Addresses returned.
+      content: { application/json: { schema: { $ref: '#/components/schemas/ApiResponseAddressList' }, example: { statusCode: 200, message: Addresses fetched successfully., data: [] } } }
+    PaymentCreated:
+      description: Checkout payment created.
+      content: { application/json: { schema: { $ref: '#/components/schemas/ApiResponsePayment' }, example: { statusCode: 201, message: Checkout initiated successfully., data: { paymentId: '65e5b2b4a4ef6f6c3b2e0003', razorpayOrderId: order_abc, amount: 179800, currency: INR } } } }
+    PaymentSuccess:
+      description: Payment returned.
+      content: { application/json: { schema: { $ref: '#/components/schemas/ApiResponsePayment' }, example: { statusCode: 200, message: Payment fetched successfully., data: { paymentStatus: SUCCESS, amount: 179800, currency: INR } } } }
+    PaymentListSuccess:
+      description: Payment page returned.
+      content: { application/json: { schema: { $ref: '#/components/schemas/ApiResponsePaymentList' }, example: { statusCode: 200, message: Payments fetched successfully., data: { payments: [], pagination: { page: 1, limit: 10, totalPayments: 0, totalPages: 0 } } } } }
+    OrderCreated:
+      description: Order created.
+      content: { application/json: { schema: { $ref: '#/components/schemas/ApiResponseOrder' }, example: { statusCode: 201, message: Order created successfully., data: { orderNumber: ORD-20260805-ABC123, orderStatus: CONFIRMED } } } }
+    OrderSuccess:
+      description: Order returned.
+      content: { application/json: { schema: { $ref: '#/components/schemas/ApiResponseOrder' }, example: { statusCode: 200, message: Order fetched successfully., data: { orderNumber: ORD-20260805-ABC123, orderStatus: DELIVERED } } } }
+    OrderListSuccess:
+      description: Order page returned.
+      content: { application/json: { schema: { $ref: '#/components/schemas/ApiResponseOrderList' }, example: { statusCode: 200, message: Orders fetched successfully., data: { orders: [], pagination: { page: 1, limit: 10, totalOrders: 0, totalPages: 0 } } } } }
+    ReviewCreated:
+      description: Review created.
+      content: { application/json: { schema: { $ref: '#/components/schemas/ApiResponseReview' }, example: { statusCode: 201, message: Review created successfully., data: { rating: 5, comment: Excellent quality and fit. } } } }
+    ReviewSuccess:
+      description: Review returned.
+      content: { application/json: { schema: { $ref: '#/components/schemas/ApiResponseReview' }, example: { statusCode: 200, message: Review updated successfully., data: { rating: 4, comment: Good quality after several washes. } } } }
+    ReviewListSuccess:
+      description: Review page returned.
+      content: { application/json: { schema: { $ref: '#/components/schemas/ApiResponseReviewList' }, example: { statusCode: 200, message: Reviews fetched successfully., data: { reviews: [], pagination: { page: 1, limit: 10, totalReviews: 0, totalPages: 0 } } } } }
+    DashboardSuccess:
+      description: Seller dashboard returned.
+      content: { application/json: { schema: { $ref: '#/components/schemas/ApiResponseDashboard' }, example: { statusCode: 200, message: Seller dashboard fetched successfully., data: { overview: { totalProducts: 12, activeProducts: 9, inactiveProducts: 3, outOfStockProducts: 1, totalOrders: 20, confirmedOrders: 2, processingOrders: 3, dispatchedOrders: 2, deliveredOrders: 11, cancelledOrders: 2, totalRevenue: 12000, totalUnitsSold: 15 }, orderStatus: { CONFIRMED: 2, PROCESSING: 3, DISPATCHED: 2, DELIVERED: 11, CANCELLED: 2 }, monthlyRevenue: [], monthlyOrders: [], recentOrders: [], lowStockProducts: [], topSellingProducts: [] } } } }
+    BadRequest:
+      description: Request validation or business-rule failure.
+      content: { application/json: { schema: { $ref: '#/components/schemas/ApiError' }, example: { success: false, message: Invalid request data. } } }
+    Unauthorized:
+      description: Missing, expired, or invalid authentication.
+      content: { application/json: { schema: { $ref: '#/components/schemas/ApiError' }, example: { success: false, message: Access token is required. } } }
+    Forbidden:
+      description: Authenticated user lacks the required role.
+      content: { application/json: { schema: { $ref: '#/components/schemas/ApiError' }, example: { success: false, message: You are not authorized to access this resource. } } }
+    NotFound:
+      description: Requested resource was not found or is not owned by the current user.
+      content: { application/json: { schema: { $ref: '#/components/schemas/ApiError' }, example: { success: false, message: Resource not found. } } }
+    Conflict:
+      description: Request conflicts with existing state.
+      content: { application/json: { schema: { $ref: '#/components/schemas/ApiError' }, example: { success: false, message: Resource already exists. } } }
+  schemas:
+    ObjectId: { type: string, pattern: '^[a-fA-F0-9]{24}$' }
+    Password: { type: string, minLength: 8, maxLength: 100, format: password, description: Must contain upper- and lower-case letters, a number, and a special character. }
+    ApiResponse:
+      type: object
+      required: [statusCode, message, data]
+      properties: { statusCode: { type: integer, example: 200 }, message: { type: string }, data: {} }
+    ApiError:
+      type: object
+      required: [success, message]
+      properties: { success: { type: boolean, example: false }, message: { type: string } }
+    Pagination:
+      type: object
+      required: [page, limit, totalPages]
+      properties: { page: { type: integer }, limit: { type: integer }, totalPages: { type: integer } }
+    User:
+      type: object
+      properties: { _id: { $ref: '#/components/schemas/ObjectId' }, name: { type: string }, email: { type: string, format: email }, avatar: { type: string, format: uri }, role: { type: string, enum: [BUYER, SELLER, ADMIN] }, isVerified: { type: boolean }, createdAt: { type: string, format: date-time }, updatedAt: { type: string, format: date-time } }
+    Seller:
+      type: object
+      properties: { _id: { $ref: '#/components/schemas/ObjectId' }, userId: { $ref: '#/components/schemas/ObjectId' }, storeName: { type: string }, businessName: { type: string }, description: { type: string }, businessAddress: { $ref: '#/components/schemas/BusinessAddress' }, logo: { $ref: '#/components/schemas/Image' }, banner: { $ref: '#/components/schemas/Image' }, isActive: { type: boolean } }
+    Image: { type: object, properties: { url: { type: string, format: uri }, fileId: { type: string } } }
+    BusinessAddress: { type: object, required: [addressLine1, city, state, country, postalCode], properties: { addressLine1: { type: string }, addressLine2: { type: string }, city: { type: string }, state: { type: string }, country: { type: string }, postalCode: { type: string } } }
+    SellerInput: { allOf: [{ $ref: '#/components/schemas/Seller' }], required: [storeName, businessName, businessAddress] }
+    ProductCategory: { type: string, enum: [tshirt, shirt, polo_tshirt, jeans, trouser, shorts, joggers, track_pants, hoodie, sweatshirt, jacket, dress, top, skirt, kurta, kurta_set] }
+    ProductGender: { type: string, enum: [men, women, unisex, kids] }
+    ProductSize: { type: string, enum: [xs, s, m, l, xl, xxl] }
+    ProductStatus: { type: string, enum: [draft, active, archived] }
+    InventoryItem: { type: object, required: [size, stock], properties: { size: { $ref: '#/components/schemas/ProductSize' }, stock: { type: integer, minimum: 0 } } }
+    Product:
+      type: object
+      properties: { _id: { $ref: '#/components/schemas/ObjectId' }, seller: { $ref: '#/components/schemas/ObjectId' }, name: { type: string }, slug: { type: string }, description: { type: string }, brand: { type: string }, gender: { $ref: '#/components/schemas/ProductGender' }, category: { $ref: '#/components/schemas/ProductCategory' }, fit: { type: string }, color: { type: string }, basePrice: { type: number }, discountPercentage: { type: number }, finalPrice: { type: number }, averageRating: { type: number }, totalReviews: { type: integer }, inventory: { type: array, items: { $ref: '#/components/schemas/InventoryItem' } }, images: { type: array, items: { $ref: '#/components/schemas/Image' } }, status: { $ref: '#/components/schemas/ProductStatus' } }
+    ProductMultipartInput:
+      type: object
+      required: [name, description, brand, gender, category, fit, color, basePrice, discountPercentage, inventory, images]
+      properties: { name: { type: string }, description: { type: string }, brand: { type: string }, gender: { $ref: '#/components/schemas/ProductGender' }, category: { $ref: '#/components/schemas/ProductCategory' }, fit: { type: string }, color: { type: string }, status: { $ref: '#/components/schemas/ProductStatus' }, basePrice: { type: number, minimum: 0 }, discountPercentage: { type: number, minimum: 0, maximum: 99 }, inventory: { type: string, example: '[{"size":"m","stock":10}]' }, images: { type: array, minItems: 3, maxItems: 5, items: { type: string, format: binary } } }
+    Cart: { type: object, properties: { items: { type: array, items: { type: object, properties: { _id: { $ref: '#/components/schemas/ObjectId' }, product: { $ref: '#/components/schemas/Product' }, size: { $ref: '#/components/schemas/ProductSize' }, quantity: { type: integer }, isAvailable: { type: boolean } } } }, totalItems: { type: integer } } }
+    AddressType: { type: string, enum: [HOME, WORK, OTHER] }
+    AddressInput: { type: object, required: [fullName, phone, addressLine1, city, state, postalCode, addressType], properties: { fullName: { type: string }, phone: { type: string, pattern: '^[6-9]\\d{9}$' }, addressLine1: { type: string }, addressLine2: { type: string }, landmark: { type: string }, city: { type: string }, state: { type: string }, postalCode: { type: string, pattern: '^\\d{6}$' }, addressType: { $ref: '#/components/schemas/AddressType' } } }
+    Address: { allOf: [{ $ref: '#/components/schemas/AddressInput' }, { type: object, properties: { _id: { $ref: '#/components/schemas/ObjectId' }, user: { $ref: '#/components/schemas/ObjectId' }, country: { type: string, example: India }, isDefault: { type: boolean } } }] }
+    PaymentMethod: { type: string, enum: [COD, RAZORPAY] }
+    Payment: { type: object, properties: { _id: { $ref: '#/components/schemas/ObjectId' }, paymentMethod: { $ref: '#/components/schemas/PaymentMethod' }, paymentStatus: { type: string, enum: [CREATED, SUCCESS, FAILED, REFUNDED] }, amount: { type: integer, description: Amount in the smallest currency unit. }, currency: { type: string, example: INR }, razorpayOrderId: { type: string }, razorpayPaymentId: { type: string }, pricingSnapshot: { type: object } } }
+    OrderStatus: { type: string, enum: [CONFIRMED, PROCESSING, DISPATCHED, DELIVERED, CANCELLED, RETURN_REQUESTED, RETURNED] }
+    Order: { type: object, properties: { orderNumber: { type: string }, payment: { $ref: '#/components/schemas/ObjectId' }, paymentMethod: { $ref: '#/components/schemas/PaymentMethod' }, paymentStatus: { type: string }, orderStatus: { $ref: '#/components/schemas/OrderStatus' }, orderItems: { type: array, items: { type: object } }, shippingAddress: { type: object }, pricing: { type: object, properties: { grandTotal: { type: number } } }, createdAt: { type: string, format: date-time } } }
+    ReviewInput: { type: object, required: [productId, orderId, rating, comment], properties: { productId: { $ref: '#/components/schemas/ObjectId' }, orderId: { $ref: '#/components/schemas/ObjectId' }, rating: { type: integer, minimum: 1, maximum: 5 }, comment: { type: string, minLength: 5, maxLength: 1000 } } }
+    Review: { allOf: [{ $ref: '#/components/schemas/ReviewInput' }, { type: object, properties: { _id: { $ref: '#/components/schemas/ObjectId' }, user: { $ref: '#/components/schemas/User' }, createdAt: { type: string, format: date-time } } }] }
+    Dashboard: { type: object, properties: { overview: { type: object }, orderStatus: { type: object, additionalProperties: { type: integer } }, monthlyRevenue: { type: array, items: { type: object, properties: { month: { type: string, example: '2026-08' }, revenue: { type: number } } } }, monthlyOrders: { type: array, items: { type: object, properties: { month: { type: string }, orders: { type: integer } } } }, recentOrders: { type: array, items: { type: object } }, lowStockProducts: { type: array, items: { type: object } }, topSellingProducts: { type: array, items: { type: object } } } }
+    RegisterRequest: { type: object, required: [name, email, password], properties: { name: { type: string, minLength: 3, maxLength: 50 }, email: { type: string, format: email }, password: { $ref: '#/components/schemas/Password' } } }
+    LoginRequest: { type: object, required: [email, password], properties: { email: { type: string, format: email }, password: { type: string, format: password } } }
+    ApiResponseUser: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }], properties: { data: { $ref: '#/components/schemas/User' } } }
+    ApiResponseSeller: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }], properties: { data: { $ref: '#/components/schemas/Seller' } } }
+    ApiResponseProduct: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }], properties: { data: { $ref: '#/components/schemas/Product' } } }
+    ApiResponseCart: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }], properties: { data: { $ref: '#/components/schemas/Cart' } } }
+    ApiResponseAddress: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }], properties: { data: { $ref: '#/components/schemas/Address' } } }
+    ApiResponsePayment: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }], properties: { data: { $ref: '#/components/schemas/Payment' } } }
+    ApiResponseOrder: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }], properties: { data: { $ref: '#/components/schemas/Order' } } }
+    ApiResponseReview: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }], properties: { data: { $ref: '#/components/schemas/Review' } } }
+    ApiResponseDashboard: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }], properties: { data: { $ref: '#/components/schemas/Dashboard' } } }
+    ApiResponseProductList: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }], properties: { data: { type: object, properties: { products: { type: array, items: { $ref: '#/components/schemas/Product' } }, pagination: { $ref: '#/components/schemas/Pagination' } } } } }
+    ApiResponseAddressList: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }], properties: { data: { type: array, items: { $ref: '#/components/schemas/Address' } } } }
+    ApiResponsePaymentList: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }], properties: { data: { type: object, properties: { payments: { type: array, items: { $ref: '#/components/schemas/Payment' } }, pagination: { $ref: '#/components/schemas/Pagination' } } } } }
+    ApiResponseOrderList: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }], properties: { data: { type: object, properties: { orders: { type: array, items: { $ref: '#/components/schemas/Order' } }, pagination: { $ref: '#/components/schemas/Pagination' } } } } }
+    ApiResponseReviewList: { allOf: [{ $ref: '#/components/schemas/ApiResponse' }], properties: { data: { type: object, properties: { reviews: { type: array, items: { $ref: '#/components/schemas/Review' } }, pagination: { $ref: '#/components/schemas/Pagination' } } } } }

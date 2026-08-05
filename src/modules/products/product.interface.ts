@@ -33,6 +33,10 @@ export interface IProduct{
 
   discountPercentage: number;
 
+  averageRating: number;
+
+  totalReviews: number;
+
   inventory: ProductInventory[];
 
   images: IImage[];

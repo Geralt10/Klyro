@@ -10,6 +10,18 @@ import {
 
 import { objectIdSchema } from "../../shared/validations/objectId.validation.js";
 
+const parseJsonValue = (value: unknown) => {
+  if (typeof value !== "string") {
+    return value;
+  }
+
+  try {
+    return JSON.parse(value);
+  } catch {
+    return value;
+  }
+};
+
 const productInventorySchema = z
   .object({
     size: z.enum(ProductSize),
@@ -56,13 +68,7 @@ const productBaseSchema = z
     discountPercentage: z.coerce.number().min(0).max(99),
 
     inventory: z.preprocess(
-      (value) => {
-        if (typeof value === "string") {
-          return JSON.parse(value);
-        }
-
-        return value;
-      },
+      parseJsonValue,
       z.array(productInventorySchema).min(1)
     ),
   })
@@ -99,13 +105,7 @@ export const updateProductSchema = productBaseSchema
   .partial()
   .extend({
     deletedImageIds: z.preprocess(
-      (value) => {
-        if (typeof value === "string") {
-          return JSON.parse(value);
-        }
-
-        return value;
-      },
+      parseJsonValue,
       z.array(z.string())
     ).optional(),
   })

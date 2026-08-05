@@ -7,26 +7,28 @@ import {
 import {
   PaymentMethod,
   PaymentStatus,
-} from "./payment.enums.js";
+} from "../payment/payment.enums.js";
+import { OrderStatus } from "./order.enums.js";
 
-interface IPayment {
+interface IOrder {
   user: Types.ObjectId;
+  orderNumber: string;
+  payment: Types.ObjectId;
   paymentMethod: PaymentMethod;
   paymentStatus: PaymentStatus;
-  amount: number;
-  currency: string;
-  razorpayOrderId?: string;
-  razorpayPaymentId?: string;
-  razorpaySignature?: string;
-  cartSnapshot: ProductSnapshot[];
-  addressSnapshot: AddressSnapshot;
-  pricingSnapshot: PricingSnapshot;
-  failureReason?: string;
-  paidAt?: Date;
-  refundedAt?: Date;
+  orderStatus: OrderStatus;
+  orderItems: ProductSnapshot[];
+  shippingAddress: AddressSnapshot;
+  pricing: PricingSnapshot;
+  confirmedAt?: Date;
+  dispatchedAt?: Date;
+  deliveredAt?: Date;
+  cancelledAt?: Date;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-const cartSnapshotSchema = new Schema<ProductSnapshot>(
+const productSnapshotSchema = new Schema<ProductSnapshot>(
   {
     productId: {
       type: Schema.Types.ObjectId,
@@ -197,7 +199,7 @@ const pricingSnapshotSchema = new Schema<PricingSnapshot>(
   }
 );
 
-const paymentSchema = new Schema<IPayment>(
+const orderSchema = new Schema<IOrder>(
   {
     user: {
       type: Schema.Types.ObjectId,
@@ -207,77 +209,71 @@ const paymentSchema = new Schema<IPayment>(
       immutable: true,
     },
 
+    orderNumber: {
+      type: String,
+      required: true,
+      unique: true,
+      immutable: true,
+      trim: true,
+    },
+
+    payment: {
+      type: Schema.Types.ObjectId,
+      ref: "Payment",
+      required: true,
+      unique: true,
+      immutable: true,
+    },
+
     paymentMethod: {
       type: String,
       enum: Object.values(PaymentMethod),
       required: true,
+      immutable: true,
     },
 
     paymentStatus: {
       type: String,
       enum: Object.values(PaymentStatus),
       required: true,
-      index: true,
+      immutable: true,
     },
 
-    amount: {
-      type: Number,
-      required: true,
-      min: 0,
-    },
-
-    currency: {
+    orderStatus: {
       type: String,
-      required: true,
-      default: "INR",
-      uppercase: true,
-      trim: true,
-    },
-
-    razorpayOrderId: {
-      type: String,
-      unique: true,
-      sparse: true,
-      trim: true,
-    },
-
-    razorpayPaymentId: {
-      type: String,
-      unique: true,
-      sparse: true,
-      trim: true,
-    },
-
-    razorpaySignature: {
-      type: String,
-      trim: true,
-    },
-
-    cartSnapshot: {
-      type: [cartSnapshotSchema],
+      enum: Object.values(OrderStatus),
+      default: OrderStatus.CONFIRMED,
       required: true,
     },
 
-    addressSnapshot: {
+    orderItems: {
+      type: [productSnapshotSchema],
+      required: true,
+    },
+
+    shippingAddress: {
       type: addressSnapshotSchema,
       required: true,
     },
 
-    pricingSnapshot: {
+    pricing: {
       type: pricingSnapshotSchema,
       required: true,
     },
 
-    failureReason: {
-      type: String,
-      trim: true,
-    },
-
-    paidAt: {
+    confirmedAt: {
       type: Date,
     },
 
-    refundedAt: {
+    dispatchedAt: {
+      type: Date,
+    },
+
+    deliveredAt: {
+      type: Date,
+    },
+
+    cancelledAt: {
       type: Date,
     },
   },
@@ -286,12 +282,20 @@ const paymentSchema = new Schema<IPayment>(
   }
 );
 
-paymentSchema.index({
+orderSchema.index({
   user: 1,
   createdAt: -1,
 });
 
-export const paymentModel = model<IPayment>(
-  "Payment",
-  paymentSchema
-);
+orderSchema.index({
+  "orderItems.sellerId": 1,
+  createdAt: -1,
+});
+
+orderSchema.index({
+  "orderItems.sellerId": 1,
+  orderStatus: 1,
+  deliveredAt: -1,
+});
+
+export const orderModel = model<IOrder>("Order", orderSchema);

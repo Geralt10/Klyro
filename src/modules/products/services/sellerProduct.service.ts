@@ -10,6 +10,7 @@ import { GetSellerProductsQuery } from "../getProductsQuerySchema.js";
 import { IProduct } from "../product.interface.js";
 import { ProductSort, ProductStatus } from "../product.enums.js";
 import { logger } from "../../../config/logger.js";
+import { escapeRegex } from "../../../utils/escapeRegex.js";
 
 
 
@@ -94,7 +95,7 @@ export const getSellerProductsService = async (
 
   if (search) {
     filter.name = {
-      $regex: search,
+      $regex: escapeRegex(search),
       $options: "i",
     };
   }

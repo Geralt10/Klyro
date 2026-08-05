@@ -94,6 +94,19 @@ const userSchema = new Schema<IUser>(
   },
   {
     timestamps: true,
+    toJSON: {
+      transform: (_document, returned) => {
+        const sanitized = returned as Partial<IUser>;
+
+        delete sanitized.password;
+        delete sanitized.refreshToken;
+        delete sanitized.verificationToken;
+        delete sanitized.verificationTokenExpiry;
+        delete sanitized.passwordResetToken;
+        delete sanitized.passwordResetTokenExpiry;
+        return returned;
+      },
+    },
   },
 );
 

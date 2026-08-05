@@ -144,11 +144,24 @@ export const refreshAccessToken = async (
   const newRefreshToken = user.generateRefreshToken();
 
   // 5. Hash & save new refresh token
-  user.refreshToken = hashToken(newRefreshToken);
+  const rotatedSession = await userModel.findOneAndUpdate(
+    {
+      _id: user._id,
+      refreshToken: hashedRefreshToken,
+    },
+    {
+      $set: {
+        refreshToken: hashToken(newRefreshToken),
+      },
+    },
+    {
+      new: true,
+    }
+  );
 
-  await user.save({
-    validateBeforeSave: false,
-  });
+  if (!rotatedSession) {
+    throw new ApiError(401, "Invalid refresh token.");
+  }
 
   return {
     accessToken: newAccessToken,
@@ -178,11 +191,21 @@ export const logoutUser = async(refreshToken:string)=>{
     throw new ApiError(401,"invalid refresh token")
   }
 
-  user.refreshToken="";
+  const loggedOutSession = await userModel.updateOne(
+    {
+      _id: user._id,
+      refreshToken: hashedRefreshToken,
+    },
+    {
+      $set: {
+        refreshToken: "",
+      },
+    }
+  );
 
-  await user.save({
-    validateBeforeSave:false
-  })
+  if (loggedOutSession.modifiedCount !== 1) {
+    throw new ApiError(401, "Invalid refresh token.");
+  }
 
   return;
 }
