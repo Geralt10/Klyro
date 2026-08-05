@@ -10,6 +10,7 @@ import buyerRouter from "./modules/products/routes/buyerProduct.routes.js";
 import cartRouter from "./modules/cart/cart.routes.js";
 import adminProductRouter from "./modules/products/routes/adminProduct.routes.js";
 import addressRouter from "./modules/address/address.routes.js";
+import paymentRouter from "./modules/payment/payment.routes.js";
 
 const app = express();
 
@@ -34,6 +35,7 @@ app.use("/api/v1/products",buyerRouter)
 app.use("/api/v1/cart",cartRouter)
 app.use("/api/v1/admin/products",adminProductRouter)
 app.use("/api/v1/addresses",addressRouter)
+app.use("/api/v1/payments",paymentRouter)
 
 
 app.use(errorMiddleware);

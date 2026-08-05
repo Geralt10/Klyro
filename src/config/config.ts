@@ -1,4 +1,5 @@
 import dotenv from "dotenv";
+import { z } from "zod";
 
 dotenv.config();
 
@@ -31,4 +32,11 @@ export const env = {
   IMAGEKIT_PUBLIC_KEY:process.env.IMAGEKIT_PUBLIC_KEY!,
   IMAGEKIT_PRIVATE_KEY:process.env.IMAGEKIT_PRIVATE_KEY!,
   IMAGEKIT_URL_ENDPOINT:process.env.IMAGEKIT_URL_ENDPOINT!,
+
+  RAZORPAY_KEY_ID: z.string().min(1).parse(
+    process.env.RAZORPAY_KEY_ID
+  ),
+  RAZORPAY_KEY_SECRET: z.string().min(1).parse(
+    process.env.RAZORPAY_KEY_SECRET
+  ),
 };
